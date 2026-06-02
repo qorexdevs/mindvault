@@ -1,6 +1,6 @@
 /**
  * End-to-end test for MindVault.
- * Tests the full flow: register → publish → verify → catalog → pay → access
+ * Tests the full flow: register -> publish -> verify -> catalog -> pay -> access
  *
  * Prerequisites:
  *   1. Server running: pnpm dev
@@ -31,7 +31,7 @@ async function request(
 }
 
 function log(step: string, result: { status: number; data: any }) {
-  const icon = result.status < 400 ? "✓" : "✗";
+  const icon = result.status < 400 ? "[ok]" : "[x]";
   console.log(`\n${icon} ${step} [${result.status}]`);
   console.log(JSON.stringify(result.data, null, 2));
 }
@@ -104,10 +104,10 @@ async function main() {
   log("Access without payment", unpaid);
 
   if (unpaid.status === 402) {
-    console.log("\n✓ Received 402 Payment Required — x402 paywall is working!");
+    console.log("\n[ok] Received 402 Payment Required -- x402 paywall is working!");
     console.log("  To complete the flow, use a funded Stellar wallet with paidFetch.");
   } else if (unpaid.status === 404) {
-    console.log("\n⚠ Resource not listed yet — verification may still be pending.");
+    console.log("\n[warn] Resource not listed yet -- verification may still be pending.");
     console.log("  Check OPENROUTER_API_KEY and AGENT_SECRET_KEY in .env");
   }
 
@@ -119,7 +119,7 @@ async function main() {
 
   if (verifyUnpaid.status === 402) {
     console.log(
-      "\n✓ Verification endpoint returns 402 — platform agent paywall working!"
+      "\n[ok] Verification endpoint returns 402 -- platform agent paywall working!"
     );
   }
 
