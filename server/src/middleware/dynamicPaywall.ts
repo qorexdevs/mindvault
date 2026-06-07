@@ -30,6 +30,15 @@ const middlewareCache = new Map<
 >();
 const CACHE_TTL_MS = 60_000; // 1 minute
 
+// Expired entries were only replaced on re-access, so the map kept one
+// middleware per resource ever requested. Sweep them out periodically.
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, entry] of middlewareCache) {
+    if (entry.expiresAt <= now) middlewareCache.delete(id);
+  }
+}, CACHE_TTL_MS).unref();
+
 export async function dynamicPaywall(
   req: Request,
   res: Response,
