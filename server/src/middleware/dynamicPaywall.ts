@@ -39,6 +39,12 @@ setInterval(() => {
   }
 }, CACHE_TTL_MS).unref();
 
+// Drop a cached middleware so price changes apply immediately instead of
+// waiting out the TTL
+export function evictPaywallCache(resourceId: string) {
+  middlewareCache.delete(resourceId);
+}
+
 export async function dynamicPaywall(
   req: Request,
   res: Response,

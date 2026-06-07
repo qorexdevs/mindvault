@@ -128,6 +128,20 @@ export async function getResourceMeta(id: string) {
   return result;
 }
 
+export async function updateResource(
+  id: string,
+  publisherId: string,
+  fields: { title?: string; description?: string; price?: string }
+) {
+  const [resource] = await db
+    .update(resources)
+    .set(fields)
+    .where(and(eq(resources.id, id), eq(resources.publisherId, publisherId)))
+    .returning();
+
+  return resource ?? null;
+}
+
 export async function delistResource(id: string, publisherId: string) {
   const [resource] = await db
     .update(resources)

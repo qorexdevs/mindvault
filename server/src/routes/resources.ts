@@ -2,13 +2,14 @@ import { Router, type Router as RouterType } from "express";
 import multer from "multer";
 import { z } from "zod/v4";
 import { apiKeyAuth } from "../middleware/apiKeyAuth.js";
-import { dynamicPaywall } from "../middleware/dynamicPaywall.js";
+import { dynamicPaywall, evictPaywallCache } from "../middleware/dynamicPaywall.js";
 import {
   createFileResource,
   createLinkResource,
   listCatalog,
   getResourceMeta,
   getVerificationDetails,
+  updateResource,
   delistResource,
 } from "../services/resourceService.js";
 import { downloadFile } from "../storage/supabaseStorage.js";
@@ -200,6 +201,38 @@ router.get("/resources/:id", dynamicPaywall, async (req, res) => {
     `attachment; filename="${resource.storagePath.split("/").pop()}"`
   );
   res.send(buffer);
+});
+
+const patchSchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    description: z.string().optional(),
+    price: priceSchema.optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, "nothing to update");
+
+// PATCH /resources/:id — update title/description/price (authenticated, owner only)
+router.patch("/resources/:id", apiKeyAuth, async (req, res) => {
+  const parsed = patchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
+    return;
+  }
+
+  const resource = await updateResource(
+    req.params.id as string,
+    req.publisher!.id,
+    parsed.data
+  );
+  if (!resource) {
+    res.status(404).json({ error: "Resource not found or not owned by you" });
+    return;
+  }
+
+  // paywall cache would keep charging the old price until the TTL runs out
+  if (parsed.data.price) evictPaywallCache(resource.id);
+
+  res.json(resource);
 });
 
 // DELETE /resources/:id — delist a resource (authenticated, owner only)
