@@ -22,10 +22,16 @@ const upload = multer({
   limits: { fileSize: config.MAX_FILE_SIZE_MB * 1024 * 1024 },
 });
 
+// USDC on Stellar has 7 decimal places; contract rejects zero/negative prices too
+const priceSchema = z
+  .string()
+  .regex(/^\d+(\.\d{1,7})?$/, "price must be a decimal number")
+  .refine((v) => Number(v) > 0, "price must be greater than zero");
+
 const linkSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
-  price: z.string().min(1),
+  price: priceSchema,
   walletAddress: z.string().optional(),
   externalUrl: z.url(),
 });
@@ -40,6 +46,12 @@ router.post("/resources", apiKeyAuth, upload.single("file"), async (req, res) =>
 
     if (!title || !price) {
       res.status(400).json({ error: "title and price are required" });
+      return;
+    }
+
+    const priceCheck = priceSchema.safeParse(price);
+    if (!priceCheck.success) {
+      res.status(400).json({ error: priceCheck.error.issues[0].message });
       return;
     }
 
