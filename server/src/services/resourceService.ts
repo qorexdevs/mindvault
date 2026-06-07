@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, ilike, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { resources, publishers, verifications } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
@@ -74,7 +74,19 @@ export async function getResourceById(id: string) {
     .then((rows) => rows[0] ?? null);
 }
 
-export async function listCatalog() {
+export async function listCatalog(opts: {
+  q?: string;
+  limit?: number;
+  offset?: number;
+} = {}) {
+  const conditions = [eq(resources.listed, true)];
+  if (opts.q) {
+    const pattern = `%${opts.q}%`;
+    conditions.push(
+      or(ilike(resources.title, pattern), ilike(resources.description, pattern))!
+    );
+  }
+
   return db
     .select({
       id: resources.id,
@@ -88,7 +100,10 @@ export async function listCatalog() {
     })
     .from(resources)
     .innerJoin(publishers, eq(resources.publisherId, publishers.id))
-    .where(eq(resources.listed, true));
+    .where(and(...conditions))
+    .orderBy(desc(resources.createdAt))
+    .limit(opts.limit ?? 50)
+    .offset(opts.offset ?? 0);
 }
 
 export async function getResourceMeta(id: string) {

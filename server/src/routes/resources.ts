@@ -95,9 +95,20 @@ router.post("/resources", apiKeyAuth, upload.single("file"), async (req, res) =>
   });
 });
 
+const catalogQuerySchema = z.object({
+  q: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
 // GET /resources — browse catalog (public)
-router.get("/resources", async (_req, res) => {
-  const catalog = await listCatalog();
+router.get("/resources", async (req, res) => {
+  const parsed = catalogQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
+    return;
+  }
+  const catalog = await listCatalog(parsed.data);
   res.json(
     catalog.map((r) => ({
       ...r,
