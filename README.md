@@ -141,7 +141,6 @@ The `PAYMENT-REQUIRED` header contains the price, destination wallet, network, a
 
 ## What Is Not Yet Built
 
-- Search and filtering on the catalog
 - Recurring access or time-limited leases (currently per-request)
 - Refund mechanism
 - Rate limiting

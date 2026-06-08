@@ -98,6 +98,7 @@ router.post("/resources", apiKeyAuth, upload.single("file"), async (req, res) =>
 
 const catalogQuerySchema = z.object({
   q: z.string().min(1).optional(),
+  type: z.enum(["file", "link"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });

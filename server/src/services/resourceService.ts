@@ -76,6 +76,7 @@ export async function getResourceById(id: string) {
 
 export async function listCatalog(opts: {
   q?: string;
+  type?: "file" | "link";
   limit?: number;
   offset?: number;
 } = {}) {
@@ -85,6 +86,9 @@ export async function listCatalog(opts: {
     conditions.push(
       or(ilike(resources.title, pattern), ilike(resources.description, pattern))!
     );
+  }
+  if (opts.type) {
+    conditions.push(eq(resources.resourceType, opts.type));
   }
 
   return db
