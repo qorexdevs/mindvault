@@ -2,6 +2,7 @@ import { eq, and, or, ilike, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { resources, publishers, verifications } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
+import { escapeLike } from "../utils/like.js";
 
 export async function createFileResource(data: {
   publisherId: string;
@@ -82,7 +83,7 @@ export async function listCatalog(opts: {
 } = {}) {
   const conditions = [eq(resources.listed, true)];
   if (opts.q) {
-    const pattern = `%${opts.q}%`;
+    const pattern = `%${escapeLike(opts.q)}%`;
     conditions.push(
       or(ilike(resources.title, pattern), ilike(resources.description, pattern))!
     );
