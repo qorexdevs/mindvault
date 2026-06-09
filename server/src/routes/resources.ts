@@ -16,18 +16,13 @@ import { downloadFile } from "../storage/supabaseStorage.js";
 import { db } from "../db/client.js";
 import { payments } from "../db/schema.js";
 import { config } from "../config.js";
+import { priceSchema } from "../validation.js";
 
 const router: RouterType = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: config.MAX_FILE_SIZE_MB * 1024 * 1024 },
 });
-
-// USDC on Stellar has 7 decimal places; contract rejects zero/negative prices too
-const priceSchema = z
-  .string()
-  .regex(/^\d+(\.\d{1,7})?$/, "price must be a decimal number")
-  .refine((v) => Number(v) > 0, "price must be greater than zero");
 
 const linkSchema = z.object({
   title: z.string().min(1),
