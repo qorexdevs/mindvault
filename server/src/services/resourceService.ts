@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, desc } from "drizzle-orm";
+import { eq, and, or, ilike, desc, count } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { resources, publishers, verifications } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
@@ -75,12 +75,12 @@ export async function getResourceById(id: string) {
     .then((rows) => rows[0] ?? null);
 }
 
-export async function listCatalog(opts: {
+type CatalogFilter = {
   q?: string;
   type?: "file" | "link";
-  limit?: number;
-  offset?: number;
-} = {}) {
+};
+
+function catalogConditions(opts: CatalogFilter) {
   const conditions = [eq(resources.listed, true)];
   if (opts.q) {
     const pattern = `%${escapeLike(opts.q)}%`;
@@ -91,7 +91,13 @@ export async function listCatalog(opts: {
   if (opts.type) {
     conditions.push(eq(resources.resourceType, opts.type));
   }
+  return and(...conditions);
+}
 
+export async function listCatalog(opts: CatalogFilter & {
+  limit?: number;
+  offset?: number;
+} = {}) {
   return db
     .select({
       id: resources.id,
@@ -105,10 +111,18 @@ export async function listCatalog(opts: {
     })
     .from(resources)
     .innerJoin(publishers, eq(resources.publisherId, publishers.id))
-    .where(and(...conditions))
+    .where(catalogConditions(opts))
     .orderBy(desc(resources.createdAt))
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
+}
+
+export async function countCatalog(opts: CatalogFilter = {}) {
+  const [row] = await db
+    .select({ total: count() })
+    .from(resources)
+    .where(catalogConditions(opts));
+  return row?.total ?? 0;
 }
 
 export async function getResourceMeta(id: string) {

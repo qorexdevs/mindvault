@@ -7,6 +7,7 @@ import {
   createFileResource,
   createLinkResource,
   listCatalog,
+  countCatalog,
   getResourceMeta,
   getVerificationDetails,
   updateResource,
@@ -105,7 +106,12 @@ router.get("/resources", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  const catalog = await listCatalog(parsed.data);
+  const { q, type } = parsed.data;
+  const [catalog, total] = await Promise.all([
+    listCatalog(parsed.data),
+    countCatalog({ q, type }),
+  ]);
+  res.set("X-Total-Count", String(total));
   res.json(
     catalog.map((r) => ({
       ...r,
