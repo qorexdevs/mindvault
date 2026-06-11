@@ -17,7 +17,7 @@ import { downloadFile } from "../storage/supabaseStorage.js";
 import { db } from "../db/client.js";
 import { payments } from "../db/schema.js";
 import { config } from "../config.js";
-import { priceSchema } from "../validation.js";
+import { priceSchema, catalogPriceSchema } from "../validation.js";
 import { CATALOG_SORTS } from "../utils/sort.js";
 
 const router: RouterType = Router();
@@ -93,13 +93,15 @@ router.post("/resources", apiKeyAuth, upload.single("file"), async (req, res) =>
   });
 });
 
-const catalogQuerySchema = z.object({
-  q: z.string().min(1).optional(),
-  type: z.enum(["file", "link"]).optional(),
-  sort: z.enum(CATALOG_SORTS).default("newest"),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-});
+const catalogQuerySchema = z
+  .object({
+    q: z.string().min(1).optional(),
+    type: z.enum(["file", "link"]).optional(),
+    sort: z.enum(CATALOG_SORTS).default("newest"),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  })
+  .and(catalogPriceSchema);
 
 // GET /resources — browse catalog (public)
 router.get("/resources", async (req, res) => {
@@ -108,10 +110,11 @@ router.get("/resources", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  const { q, type } = parsed.data;
+  const { q, type, minPrice, maxPrice } = parsed.data;
+  const filter = { q, type, minPrice, maxPrice };
   const [catalog, total] = await Promise.all([
     listCatalog(parsed.data),
-    countCatalog({ q, type }),
+    countCatalog(filter),
   ]);
   res.set("X-Total-Count", String(total));
   res.json(

@@ -79,6 +79,8 @@ export async function getResourceById(id: string) {
 type CatalogFilter = {
   q?: string;
   type?: "file" | "link";
+  minPrice?: number;
+  maxPrice?: number;
 };
 
 function catalogConditions(opts: CatalogFilter) {
@@ -91,6 +93,13 @@ function catalogConditions(opts: CatalogFilter) {
   }
   if (opts.type) {
     conditions.push(eq(resources.resourceType, opts.type));
+  }
+  // price is stored as text, cast to numeric so the bounds compare like numbers
+  if (opts.minPrice !== undefined) {
+    conditions.push(sql`cast(${resources.price} as numeric) >= ${opts.minPrice}`);
+  }
+  if (opts.maxPrice !== undefined) {
+    conditions.push(sql`cast(${resources.price} as numeric) <= ${opts.maxPrice}`);
   }
   return and(...conditions);
 }
