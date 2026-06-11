@@ -79,6 +79,7 @@ export async function getResourceById(id: string) {
 type CatalogFilter = {
   q?: string;
   type?: "file" | "link";
+  publisher?: string;
   minPrice?: number;
   maxPrice?: number;
 };
@@ -93,6 +94,9 @@ function catalogConditions(opts: CatalogFilter) {
   }
   if (opts.type) {
     conditions.push(eq(resources.resourceType, opts.type));
+  }
+  if (opts.publisher) {
+    conditions.push(ilike(publishers.name, `%${escapeLike(opts.publisher)}%`));
   }
   // price is stored as text, cast to numeric so the bounds compare like numbers
   if (opts.minPrice !== undefined) {
@@ -136,6 +140,7 @@ export async function countCatalog(opts: CatalogFilter = {}) {
   const [row] = await db
     .select({ total: count() })
     .from(resources)
+    .innerJoin(publishers, eq(resources.publisherId, publishers.id))
     .where(catalogConditions(opts));
   return row?.total ?? 0;
 }

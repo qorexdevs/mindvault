@@ -97,6 +97,7 @@ const catalogQuerySchema = z
   .object({
     q: z.string().min(1).optional(),
     type: z.enum(["file", "link"]).optional(),
+    publisher: z.string().min(1).optional(),
     sort: z.enum(CATALOG_SORTS).default("newest"),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
@@ -110,8 +111,8 @@ router.get("/resources", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  const { q, type, minPrice, maxPrice } = parsed.data;
-  const filter = { q, type, minPrice, maxPrice };
+  const { q, type, publisher, minPrice, maxPrice } = parsed.data;
+  const filter = { q, type, publisher, minPrice, maxPrice };
   const [catalog, total] = await Promise.all([
     listCatalog(parsed.data),
     countCatalog(filter),
