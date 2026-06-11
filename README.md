@@ -1,5 +1,7 @@
 # MindVault
 
+[![ci](https://github.com/qorexdevs/mindvault/actions/workflows/ci.yml/badge.svg)](https://github.com/qorexdevs/mindvault/actions/workflows/ci.yml)
+
 MindVault is a payment-protected vault for digital resources built on Stellar. Creators store their work and MindVault wraps it with an HTTP 402 paywall using the x402 protocol. Anyone with the resource URL — whether a human in a browser or an AI agent running autonomously — pays USDC on Stellar to access it.
 
 ## The Problem
