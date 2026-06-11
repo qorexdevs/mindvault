@@ -1,8 +1,9 @@
-import { eq, and, or, ilike, desc, count } from "drizzle-orm";
+import { eq, and, or, ilike, asc, desc, count, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { resources, publishers, verifications } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
 import { escapeLike } from "../utils/like.js";
+import { resolveSort, type CatalogSort } from "../utils/sort.js";
 
 export async function createFileResource(data: {
   publisherId: string;
@@ -97,7 +98,12 @@ function catalogConditions(opts: CatalogFilter) {
 export async function listCatalog(opts: CatalogFilter & {
   limit?: number;
   offset?: number;
+  sort?: CatalogSort;
 } = {}) {
+  const { column, direction } = resolveSort(opts.sort);
+  const col =
+    column === "price" ? sql`cast(${resources.price} as numeric)` : resources.createdAt;
+  const order = direction === "asc" ? asc(col) : desc(col);
   return db
     .select({
       id: resources.id,
@@ -112,7 +118,7 @@ export async function listCatalog(opts: CatalogFilter & {
     .from(resources)
     .innerJoin(publishers, eq(resources.publisherId, publishers.id))
     .where(catalogConditions(opts))
-    .orderBy(desc(resources.createdAt))
+    .orderBy(order)
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
 }

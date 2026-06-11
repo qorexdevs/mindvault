@@ -18,6 +18,7 @@ import { db } from "../db/client.js";
 import { payments } from "../db/schema.js";
 import { config } from "../config.js";
 import { priceSchema } from "../validation.js";
+import { CATALOG_SORTS } from "../utils/sort.js";
 
 const router: RouterType = Router();
 const upload = multer({
@@ -95,6 +96,7 @@ router.post("/resources", apiKeyAuth, upload.single("file"), async (req, res) =>
 const catalogQuerySchema = z.object({
   q: z.string().min(1).optional(),
   type: z.enum(["file", "link"]).optional(),
+  sort: z.enum(CATALOG_SORTS).default("newest"),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
