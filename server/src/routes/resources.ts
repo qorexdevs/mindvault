@@ -19,6 +19,7 @@ import { payments } from "../db/schema.js";
 import { config } from "../config.js";
 import { priceSchema, catalogPriceSchema } from "../validation.js";
 import { CATALOG_SORTS } from "../utils/sort.js";
+import { pageLinks } from "../utils/page.js";
 
 const router: RouterType = Router();
 const upload = multer({
@@ -118,6 +119,14 @@ router.get("/resources", async (req, res) => {
     countCatalog(filter),
   ]);
   res.set("X-Total-Count", String(total));
+  const links = pageLinks({
+    path: "/resources",
+    query: { q, type, publisher, minPrice, maxPrice, sort: parsed.data.sort },
+    limit: parsed.data.limit,
+    offset: parsed.data.offset,
+    total,
+  });
+  if (links) res.set("Link", links);
   res.json(
     catalog.map((r) => ({
       ...r,
