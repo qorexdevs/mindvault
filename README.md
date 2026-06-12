@@ -111,6 +111,9 @@ cp .env.example .env
 # Fill in Supabase, Stellar, and OpenRouter credentials
 pnpm db:generate && pnpm db:migrate
 
+# Optional: seed a few sample listings so the catalog isn't empty
+pnpm db:seed
+
 # Generate wallets (run twice for separate platform + agent wallets)
 pnpm generate-wallet
 
