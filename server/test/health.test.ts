@@ -1,26 +1,18 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
+import express from "express";
 import type { Server } from "node:http";
+import healthRouter from "../src/routes/health.js";
 
-// config.ts validates env at import time and exits on missing vars, so fill in
-// dummies before pulling in createApp. /health touches no db, so they can be fake.
-for (const [k, v] of Object.entries({
-  PAY_TO: "GTEST",
-  AGENT_SECRET_KEY: "STEST",
-  OPENROUTER_API_KEY: "test",
-  DATABASE_URL: "postgres://test",
-  SUPABASE_URL: "http://localhost",
-  SUPABASE_SERVICE_KEY: "test",
-})) {
-  process.env[k] ??= v;
-}
-
+// mount the health router on its own app: it depends on nothing but express,
+// so the test stays free of db/supabase config and runs anywhere.
 let server: Server;
 let base: string;
 
 before(async () => {
-  const { createApp } = await import("../src/app.js");
-  server = createApp().listen(0);
+  const app = express();
+  app.use(healthRouter);
+  server = app.listen(0);
   await new Promise((r) => server.once("listening", r));
   const addr = server.address();
   if (!addr || typeof addr === "string") throw new Error("no address");
