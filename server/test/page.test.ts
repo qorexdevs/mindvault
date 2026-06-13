@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { pageLinks } from "../src/utils/page.js";
 
-const base = { path: "/resources", query: { sort: "newest" } };
+const base = { path: "/resources", query: { q: "art", sort: "newest" } };
 
 test("first page only points forward to next and last", () => {
   const links = pageLinks({ ...base, limit: 20, offset: 0, total: 100 });
@@ -18,6 +18,7 @@ test("a middle page exposes all four rels", () => {
   assert.match(links, /offset=20>; rel="prev"/);
   assert.match(links, /offset=60>; rel="next"/);
   assert.match(links, /offset=80>; rel="last"/);
+  assert.match(links, /q=art/);
 });
 
 test("last page only points back to first and prev", () => {
