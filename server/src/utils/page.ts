@@ -1,6 +1,6 @@
 // pagination links for GET /resources. the catalog already returns
 // X-Total-Count, but a client still has to do the offset math itself to walk
-// the pages. build the RFC5988 Link header so prev/next are discoverable.
+// the pages. build the RFC5988 Link header so first/prev/next/last are discoverable.
 export type PageParams = {
   path: string;
   query: Record<string, string | number | undefined>;
@@ -22,11 +22,14 @@ function withOffset(p: PageParams, offset: number): string {
 export function pageLinks(p: PageParams): string {
   const parts: string[] = [];
   if (p.offset > 0) {
+    parts.push(`<${withOffset(p, 0)}>; rel="first"`);
     const prev = Math.max(0, p.offset - p.limit);
     parts.push(`<${withOffset(p, prev)}>; rel="prev"`);
   }
   if (p.offset + p.limit < p.total) {
     parts.push(`<${withOffset(p, p.offset + p.limit)}>; rel="next"`);
+    const last = Math.floor((p.total - 1) / p.limit) * p.limit;
+    parts.push(`<${withOffset(p, last)}>; rel="last"`);
   }
   return parts.join(", ");
 }

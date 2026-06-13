@@ -2,27 +2,37 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { pageLinks } from "../src/utils/page.js";
 
-const base = { path: "/resources", query: { q: "art" }, limit: 10 };
+const base = { path: "/resources", query: { sort: "newest" } };
 
-test("pageLinks gives only next on the first page", () => {
-  const links = pageLinks({ ...base, offset: 0, total: 30 });
-  assert.equal(links.includes('rel="prev"'), false);
-  assert.match(links, /offset=10>; rel="next"/);
-  assert.match(links, /q=art/);
-});
-
-test("pageLinks gives prev and next in the middle", () => {
-  const links = pageLinks({ ...base, offset: 10, total: 30 });
-  assert.match(links, /offset=0>; rel="prev"/);
+test("first page only points forward to next and last", () => {
+  const links = pageLinks({ ...base, limit: 20, offset: 0, total: 100 });
   assert.match(links, /offset=20>; rel="next"/);
+  assert.match(links, /offset=80>; rel="last"/);
+  assert.doesNotMatch(links, /rel="prev"/);
+  assert.doesNotMatch(links, /rel="first"/);
 });
 
-test("pageLinks drops next on the last page", () => {
-  const links = pageLinks({ ...base, offset: 20, total: 30 });
-  assert.match(links, /offset=10>; rel="prev"/);
-  assert.equal(links.includes('rel="next"'), false);
+test("a middle page exposes all four rels", () => {
+  const links = pageLinks({ ...base, limit: 20, offset: 40, total: 100 });
+  assert.match(links, /offset=0>; rel="first"/);
+  assert.match(links, /offset=20>; rel="prev"/);
+  assert.match(links, /offset=60>; rel="next"/);
+  assert.match(links, /offset=80>; rel="last"/);
 });
 
-test("pageLinks is empty when everything fits on one page", () => {
-  assert.equal(pageLinks({ ...base, offset: 0, total: 5 }), "");
+test("last page only points back to first and prev", () => {
+  const links = pageLinks({ ...base, limit: 20, offset: 80, total: 100 });
+  assert.match(links, /offset=0>; rel="first"/);
+  assert.match(links, /offset=60>; rel="prev"/);
+  assert.doesNotMatch(links, /rel="next"/);
+  assert.doesNotMatch(links, /rel="last"/);
+});
+
+test("an uneven last page lands on the right last offset", () => {
+  const links = pageLinks({ ...base, limit: 20, offset: 0, total: 95 });
+  assert.match(links, /offset=80>; rel="last"/);
+});
+
+test("a single page has no links at all", () => {
+  assert.equal(pageLinks({ ...base, limit: 20, offset: 0, total: 10 }), "");
 });
