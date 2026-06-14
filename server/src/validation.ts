@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { CATALOG_SORTS } from "./utils/sort.js";
 
 // USDC on Stellar has 7 decimal places; contract rejects zero/negative prices too
 export const priceSchema = z
@@ -17,3 +18,16 @@ export const catalogPriceSchema = z
     (v) => v.minPrice === undefined || v.maxPrice === undefined || v.maxPrice >= v.minPrice,
     { message: "maxPrice must be >= minPrice", path: ["maxPrice"] }
   );
+
+// full GET /resources query: paging + filters + sort, on top of the price range.
+// limit is capped so a client can't ask for the whole table in one page.
+export const catalogQuerySchema = z
+  .object({
+    q: z.string().min(1).optional(),
+    type: z.enum(["file", "link"]).optional(),
+    publisher: z.string().min(1).optional(),
+    sort: z.enum(CATALOG_SORTS).default("newest"),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  })
+  .and(catalogPriceSchema);

@@ -17,8 +17,7 @@ import { downloadFile } from "../storage/supabaseStorage.js";
 import { db } from "../db/client.js";
 import { payments } from "../db/schema.js";
 import { config } from "../config.js";
-import { priceSchema, catalogPriceSchema } from "../validation.js";
-import { CATALOG_SORTS } from "../utils/sort.js";
+import { priceSchema, catalogQuerySchema } from "../validation.js";
 import { pageLinks } from "../utils/page.js";
 
 const router: RouterType = Router();
@@ -93,17 +92,6 @@ router.post("/resources", apiKeyAuth, upload.single("file"), async (req, res) =>
     accessUrl: `${config.BASE_URL}/resources/${resource.id}`,
   });
 });
-
-const catalogQuerySchema = z
-  .object({
-    q: z.string().min(1).optional(),
-    type: z.enum(["file", "link"]).optional(),
-    publisher: z.string().min(1).optional(),
-    sort: z.enum(CATALOG_SORTS).default("newest"),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    offset: z.coerce.number().int().min(0).default(0),
-  })
-  .and(catalogPriceSchema);
 
 // GET /resources — browse catalog (public)
 router.get("/resources", async (req, res) => {

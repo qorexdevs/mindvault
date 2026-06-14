@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { catalogPriceSchema } from "../src/validation.js";
+import { catalogPriceSchema, catalogQuerySchema } from "../src/validation.js";
 
 test("catalogPriceSchema coerces string bounds and allows a zero floor", () => {
   const parsed = catalogPriceSchema.safeParse({ minPrice: "0", maxPrice: "10.5" });
@@ -17,4 +17,31 @@ test("catalogPriceSchema accepts a missing or single bound", () => {
 test("catalogPriceSchema rejects an inverted range and negatives", () => {
   assert.equal(catalogPriceSchema.safeParse({ minPrice: "10", maxPrice: "5" }).success, false);
   assert.equal(catalogPriceSchema.safeParse({ minPrice: "-1" }).success, false);
+});
+
+test("catalogQuerySchema fills paging and sort defaults on an empty query", () => {
+  const parsed = catalogQuerySchema.safeParse({});
+  assert.equal(parsed.success, true);
+  if (parsed.success) {
+    assert.equal(parsed.data.limit, 50);
+    assert.equal(parsed.data.offset, 0);
+    assert.equal(parsed.data.sort, "newest");
+  }
+});
+
+test("catalogQuerySchema coerces string paging from the querystring", () => {
+  const parsed = catalogQuerySchema.safeParse({ limit: "10", offset: "20", sort: "price_asc" });
+  assert.equal(parsed.success, true);
+  if (parsed.success) {
+    assert.equal(parsed.data.limit, 10);
+    assert.equal(parsed.data.offset, 20);
+    assert.equal(parsed.data.sort, "price_asc");
+  }
+});
+
+test("catalogQuerySchema caps limit, rejects a negative offset and bad sort", () => {
+  assert.equal(catalogQuerySchema.safeParse({ limit: "101" }).success, false);
+  assert.equal(catalogQuerySchema.safeParse({ limit: "0" }).success, false);
+  assert.equal(catalogQuerySchema.safeParse({ offset: "-1" }).success, false);
+  assert.equal(catalogQuerySchema.safeParse({ sort: "cheapest" }).success, false);
 });
