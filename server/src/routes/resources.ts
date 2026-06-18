@@ -17,7 +17,7 @@ import { downloadFile } from "../storage/supabaseStorage.js";
 import { db } from "../db/client.js";
 import { payments } from "../db/schema.js";
 import { config } from "../config.js";
-import { priceSchema, catalogQuerySchema } from "../validation.js";
+import { priceSchema, catalogQuerySchema, resourcePatchSchema } from "../validation.js";
 import { pageLinks } from "../utils/page.js";
 
 const router: RouterType = Router();
@@ -208,17 +208,9 @@ router.get("/resources/:id", dynamicPaywall, async (req, res) => {
   res.send(buffer);
 });
 
-const patchSchema = z
-  .object({
-    title: z.string().min(1).optional(),
-    description: z.string().optional(),
-    price: priceSchema.optional(),
-  })
-  .refine((v) => Object.keys(v).length > 0, "nothing to update");
-
 // PATCH /resources/:id — update title/description/price (authenticated, owner only)
 router.patch("/resources/:id", apiKeyAuth, async (req, res) => {
-  const parsed = patchSchema.safeParse(req.body);
+  const parsed = resourcePatchSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;

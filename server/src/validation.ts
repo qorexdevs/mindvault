@@ -31,3 +31,13 @@ export const catalogQuerySchema = z
     offset: z.coerce.number().int().min(0).default(0),
   })
   .and(catalogPriceSchema);
+
+// PATCH /resources/:id body. every field is optional but at least one must be
+// present, otherwise the update is a no-op that still evicts the paywall cache.
+export const resourcePatchSchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    description: z.string().optional(),
+    price: priceSchema.optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, "nothing to update");
