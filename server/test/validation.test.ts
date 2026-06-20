@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { priceSchema, resourcePatchSchema } from "../src/validation.js";
+import { priceSchema, resourcePatchSchema, catalogQuerySchema } from "../src/validation.js";
 
 test("priceSchema accepts up to 7 decimals", () => {
   for (const v of ["1", "0.5", "10.1234567"]) {
@@ -24,4 +24,13 @@ test("resourcePatchSchema rejects an empty body", () => {
   const parsed = resourcePatchSchema.safeParse({});
   assert.equal(parsed.success, false);
   assert.equal(parsed.success === false && parsed.error.issues[0].message, "nothing to update");
+});
+
+test("catalogQuerySchema trims q and publisher and drops blanks", () => {
+  const parsed = catalogQuerySchema.safeParse({ q: "  notes  ", publisher: "   " });
+  assert.equal(parsed.success, true);
+  if (parsed.success) {
+    assert.equal(parsed.data.q, "notes");
+    assert.equal(parsed.data.publisher, undefined);
+  }
 });

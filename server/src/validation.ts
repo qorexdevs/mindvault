@@ -19,13 +19,21 @@ export const catalogPriceSchema = z
     { message: "maxPrice must be >= minPrice", path: ["maxPrice"] }
   );
 
+// trim a text filter and drop it if nothing's left, so a whitespace-only q or
+// publisher is ignored instead of building a useless '%   %' ilike pattern and
+// leaking the blank value into the pagination Link header.
+const textFilter = z
+  .string()
+  .optional()
+  .transform((v) => v?.trim() || undefined);
+
 // full GET /resources query: paging + filters + sort, on top of the price range.
 // limit is capped so a client can't ask for the whole table in one page.
 export const catalogQuerySchema = z
   .object({
-    q: z.string().min(1).optional(),
+    q: textFilter,
     type: z.enum(["file", "link"]).optional(),
-    publisher: z.string().min(1).optional(),
+    publisher: textFilter,
     sort: z.enum(CATALOG_SORTS).default("newest"),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
