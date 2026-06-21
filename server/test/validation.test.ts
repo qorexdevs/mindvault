@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { priceSchema, resourcePatchSchema, catalogQuerySchema } from "../src/validation.js";
+import { priceSchema, resourcePatchSchema, catalogQuerySchema, linkSchema } from "../src/validation.js";
 
 test("priceSchema accepts up to 7 decimals", () => {
   for (const v of ["1", "0.5", "10.1234567"]) {
@@ -32,5 +32,28 @@ test("catalogQuerySchema trims q and publisher and drops blanks", () => {
   if (parsed.success) {
     assert.equal(parsed.data.q, "notes");
     assert.equal(parsed.data.publisher, undefined);
+  }
+});
+
+test("linkSchema needs a title, a valid price and a real url", () => {
+  const ok = linkSchema.safeParse({ title: "notes", price: "1.5", externalUrl: "https://x.io/a" });
+  assert.equal(ok.success, true);
+  assert.equal(linkSchema.safeParse({ price: "1", externalUrl: "https://x.io" }).success, false);
+  assert.equal(linkSchema.safeParse({ title: "x", price: "0", externalUrl: "https://x.io" }).success, false);
+  assert.equal(linkSchema.safeParse({ title: "x", price: "1", externalUrl: "not a url" }).success, false);
+});
+
+test("linkSchema keeps optional description and walletAddress", () => {
+  const parsed = linkSchema.safeParse({
+    title: "notes",
+    price: "1",
+    externalUrl: "https://x.io",
+    description: "a guide",
+    walletAddress: "G...",
+  });
+  assert.equal(parsed.success, true);
+  if (parsed.success) {
+    assert.equal(parsed.data.description, "a guide");
+    assert.equal(parsed.data.walletAddress, "G...");
   }
 });

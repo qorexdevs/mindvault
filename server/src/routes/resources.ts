@@ -1,6 +1,5 @@
 import { Router, type Router as RouterType } from "express";
 import multer from "multer";
-import { z } from "zod/v4";
 import { apiKeyAuth } from "../middleware/apiKeyAuth.js";
 import { dynamicPaywall, evictPaywallCache } from "../middleware/dynamicPaywall.js";
 import {
@@ -17,21 +16,13 @@ import { downloadFile } from "../storage/supabaseStorage.js";
 import { db } from "../db/client.js";
 import { payments } from "../db/schema.js";
 import { config } from "../config.js";
-import { priceSchema, catalogQuerySchema, resourcePatchSchema } from "../validation.js";
+import { priceSchema, catalogQuerySchema, resourcePatchSchema, linkSchema } from "../validation.js";
 import { pageLinks } from "../utils/page.js";
 
 const router: RouterType = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: config.MAX_FILE_SIZE_MB * 1024 * 1024 },
-});
-
-const linkSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional(),
-  price: priceSchema,
-  walletAddress: z.string().optional(),
-  externalUrl: z.url(),
 });
 
 // POST /resources — publish a resource (authenticated)

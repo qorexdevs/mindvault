@@ -54,3 +54,14 @@ export const resourcePatchSchema = z
     price: priceSchema.optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "nothing to update");
+
+// POST /resources body for a link resource (the file branch reads multipart
+// fields by hand). externalUrl must be a real url, walletAddress falls back to
+// the publisher's when omitted.
+export const linkSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  price: priceSchema,
+  walletAddress: z.string().optional(),
+  externalUrl: z.url(),
+});
