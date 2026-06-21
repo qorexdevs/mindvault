@@ -80,6 +80,7 @@ type CatalogFilter = {
   q?: string;
   type?: "file" | "link";
   publisher?: string;
+  verified?: boolean;
   minPrice?: number;
   maxPrice?: number;
 };
@@ -97,6 +98,9 @@ function catalogConditions(opts: CatalogFilter) {
   }
   if (opts.publisher) {
     conditions.push(ilike(publishers.name, `%${escapeLike(opts.publisher)}%`));
+  }
+  if (opts.verified) {
+    conditions.push(eq(resources.verificationStatus, "verified"));
   }
   // price is stored as text, cast to numeric so the bounds compare like numbers
   if (opts.minPrice !== undefined) {

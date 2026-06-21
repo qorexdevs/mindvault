@@ -100,8 +100,8 @@ router.get("/resources", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  const { q, type, publisher, minPrice, maxPrice } = parsed.data;
-  const filter = { q, type, publisher, minPrice, maxPrice };
+  const { q, type, publisher, verified, minPrice, maxPrice } = parsed.data;
+  const filter = { q, type, publisher, verified, minPrice, maxPrice };
   const [catalog, total] = await Promise.all([
     listCatalog(parsed.data),
     countCatalog(filter),
@@ -109,7 +109,7 @@ router.get("/resources", async (req, res) => {
   res.set("X-Total-Count", String(total));
   const links = pageLinks({
     path: "/resources",
-    query: { q, type, publisher, minPrice, maxPrice, sort: parsed.data.sort },
+    query: { q, type, publisher, verified, minPrice, maxPrice, sort: parsed.data.sort },
     limit: parsed.data.limit,
     offset: parsed.data.offset,
     total,

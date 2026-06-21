@@ -45,3 +45,12 @@ test("catalogQuerySchema caps limit, rejects a negative offset and bad sort", ()
   assert.equal(catalogQuerySchema.safeParse({ offset: "-1" }).success, false);
   assert.equal(catalogQuerySchema.safeParse({ sort: "cheapest" }).success, false);
 });
+
+test("catalogQuerySchema coerces verified to a boolean and rejects junk", () => {
+  const on = catalogQuerySchema.safeParse({ verified: "true" });
+  assert.equal(on.success && on.data.verified, true);
+  const off = catalogQuerySchema.safeParse({ verified: "false" });
+  assert.equal(off.success && off.data.verified, false);
+  assert.equal(catalogQuerySchema.safeParse({}).success && catalogQuerySchema.parse({}).verified, undefined);
+  assert.equal(catalogQuerySchema.safeParse({ verified: "yes" }).success, false);
+});

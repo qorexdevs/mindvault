@@ -34,6 +34,11 @@ export const catalogQuerySchema = z
     q: textFilter,
     type: z.enum(["file", "link"]).optional(),
     publisher: textFilter,
+    // verified=true narrows the catalog to resources that passed verification
+    verified: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((v) => (v === undefined ? undefined : v === "true")),
     sort: z.enum(CATALOG_SORTS).default("newest"),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),

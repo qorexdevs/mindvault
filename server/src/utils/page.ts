@@ -3,7 +3,7 @@
 // the pages. build the RFC5988 Link header so first/prev/next/last are discoverable.
 export type PageParams = {
   path: string;
-  query: Record<string, string | number | undefined>;
+  query: Record<string, string | number | boolean | undefined>;
   limit: number;
   offset: number;
   total: number;
