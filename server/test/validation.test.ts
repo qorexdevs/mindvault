@@ -43,6 +43,12 @@ test("linkSchema needs a title, a valid price and a real url", () => {
   assert.equal(linkSchema.safeParse({ title: "x", price: "1", externalUrl: "not a url" }).success, false);
 });
 
+test("linkSchema rejects non-http(s) urls", () => {
+  for (const url of ["javascript:alert(1)", "data:text/html,x", "ftp://x.io/a"]) {
+    assert.equal(linkSchema.safeParse({ title: "x", price: "1", externalUrl: url }).success, false);
+  }
+});
+
 test("linkSchema keeps optional description and walletAddress", () => {
   const parsed = linkSchema.safeParse({
     title: "notes",

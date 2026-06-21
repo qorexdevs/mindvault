@@ -63,5 +63,7 @@ export const linkSchema = z.object({
   description: z.string().optional(),
   price: priceSchema,
   walletAddress: z.string().optional(),
-  externalUrl: z.url(),
+  // only http(s), so a javascript:/data: url can't be stored and later handed
+  // to whoever paid for the link.
+  externalUrl: z.url({ protocol: /^https?$/ }),
 });
