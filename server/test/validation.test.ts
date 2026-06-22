@@ -35,6 +35,16 @@ test("catalogQuerySchema trims q and publisher and drops blanks", () => {
   }
 });
 
+test("catalogQuerySchema takes a known status and rejects a bad one", () => {
+  const ok = catalogQuerySchema.safeParse({ status: "rejected" });
+  assert.equal(ok.success, true);
+  if (ok.success) assert.equal(ok.data.status, "rejected");
+  assert.equal(catalogQuerySchema.safeParse({ status: "bogus" }).success, false);
+  // absent stays undefined so the filter is skipped
+  const none = catalogQuerySchema.safeParse({});
+  assert.equal(none.success && none.data.status, undefined);
+});
+
 test("linkSchema needs a title, a valid price and a real url", () => {
   const ok = linkSchema.safeParse({ title: "notes", price: "1.5", externalUrl: "https://x.io/a" });
   assert.equal(ok.success, true);

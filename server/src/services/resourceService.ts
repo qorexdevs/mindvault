@@ -81,6 +81,7 @@ type CatalogFilter = {
   type?: "file" | "link";
   publisher?: string;
   verified?: boolean;
+  status?: "pending" | "verified" | "rejected";
   minPrice?: number;
   maxPrice?: number;
 };
@@ -99,9 +100,13 @@ function catalogConditions(opts: CatalogFilter) {
   if (opts.publisher) {
     conditions.push(ilike(publishers.name, `%${escapeLike(opts.publisher)}%`));
   }
-  // verified=false means "show the rest", not "ignore the filter", so it has to
-  // exclude verified rows explicitly instead of falling through like a truthy check would
-  if (opts.verified !== undefined) {
+  // status is the exact match; verified is the coarse true/everything-else split.
+  // when both arrive status takes over, so verified can't fight it into an empty page.
+  if (opts.status !== undefined) {
+    conditions.push(eq(resources.verificationStatus, opts.status));
+  } else if (opts.verified !== undefined) {
+    // verified=false means "show the rest", not "ignore the filter", so it has to
+    // exclude verified rows explicitly instead of falling through like a truthy check would
     conditions.push(
       opts.verified
         ? eq(resources.verificationStatus, "verified")

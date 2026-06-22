@@ -39,6 +39,9 @@ export const catalogQuerySchema = z
       .enum(["true", "false"])
       .optional()
       .transform((v) => (v === undefined ? undefined : v === "true")),
+    // status pins the exact verification state. more precise than verified, which
+    // can only split passed vs everything-else; status wins when both are sent.
+    status: z.enum(["pending", "verified", "rejected"]).optional(),
     sort: z.enum(CATALOG_SORTS).default("newest"),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
