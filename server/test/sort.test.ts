@@ -12,3 +12,8 @@ test("resolveSort maps oldest and price options", () => {
   assert.deepEqual(resolveSort("price_asc"), { column: "price", direction: "asc" });
   assert.deepEqual(resolveSort("price_desc"), { column: "price", direction: "desc" });
 });
+
+test("resolveSort maps title options", () => {
+  assert.deepEqual(resolveSort("title_asc"), { column: "title", direction: "asc" });
+  assert.deepEqual(resolveSort("title_desc"), { column: "title", direction: "desc" });
+});

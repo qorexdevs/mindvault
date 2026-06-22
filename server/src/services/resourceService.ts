@@ -119,7 +119,11 @@ export async function listCatalog(opts: CatalogFilter & {
 } = {}) {
   const { column, direction } = resolveSort(opts.sort);
   const col =
-    column === "price" ? sql`cast(${resources.price} as numeric)` : resources.createdAt;
+    column === "price"
+      ? sql`cast(${resources.price} as numeric)`
+      : column === "title"
+        ? sql`lower(${resources.title})`
+        : resources.createdAt;
   const order = direction === "asc" ? asc(col) : desc(col);
   return db
     .select({
