@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, asc, desc, count, sql } from "drizzle-orm";
+import { eq, ne, and, or, ilike, asc, desc, count, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { resources, publishers, verifications } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
@@ -99,8 +99,14 @@ function catalogConditions(opts: CatalogFilter) {
   if (opts.publisher) {
     conditions.push(ilike(publishers.name, `%${escapeLike(opts.publisher)}%`));
   }
-  if (opts.verified) {
-    conditions.push(eq(resources.verificationStatus, "verified"));
+  // verified=false means "show the rest", not "ignore the filter", so it has to
+  // exclude verified rows explicitly instead of falling through like a truthy check would
+  if (opts.verified !== undefined) {
+    conditions.push(
+      opts.verified
+        ? eq(resources.verificationStatus, "verified")
+        : ne(resources.verificationStatus, "verified")
+    );
   }
   // price is stored as text, cast to numeric so the bounds compare like numbers
   if (opts.minPrice !== undefined) {
