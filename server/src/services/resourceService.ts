@@ -181,9 +181,9 @@ export async function countCatalog(opts: CatalogFilter = {}) {
 
 export async function catalogStats(opts: CatalogFilter = {}) {
   // one-pass dashboard counters over the same filters as the catalog: total,
-  // the file/link split, the verification split, and the price range. price is
-  // text, so cast it for min/max/avg/sum; avg and sum come back rounded to USDC's
-  // 7 places, sum being the catalog value of the current view.
+  // the file/link split, the verification split, the free/paid split, and the
+  // price range. price is text, so cast it for min/max/avg/sum; avg and sum come
+  // back rounded to USDC's 7 places, sum being the catalog value of the current view.
   const [row] = await db
     .select({
       total: count(),
@@ -192,6 +192,7 @@ export async function catalogStats(opts: CatalogFilter = {}) {
       pending: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'pending')`,
       verified: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'verified')`,
       rejected: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'rejected')`,
+      free: sql<number>`count(*) filter (where cast(${resources.price} as numeric) = 0)`,
       minPrice: sql<string | null>`min(cast(${resources.price} as numeric))`,
       maxPrice: sql<string | null>`max(cast(${resources.price} as numeric))`,
       avgPrice: sql<string | null>`round(avg(cast(${resources.price} as numeric)), 7)`,
@@ -208,6 +209,10 @@ export async function catalogStats(opts: CatalogFilter = {}) {
       pending: Number(row?.pending ?? 0),
       verified: Number(row?.verified ?? 0),
       rejected: Number(row?.rejected ?? 0),
+    },
+    byPrice: {
+      free: Number(row?.free ?? 0),
+      paid: Number(row?.total ?? 0) - Number(row?.free ?? 0),
     },
     price: {
       min: row?.minPrice ?? null,
