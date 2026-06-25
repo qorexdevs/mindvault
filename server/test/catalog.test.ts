@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { catalogPriceSchema, catalogQuerySchema } from "../src/validation.js";
+import { catalogDateSchema, catalogPriceSchema, catalogQuerySchema } from "../src/validation.js";
 
 test("catalogPriceSchema coerces string bounds and allows a zero floor", () => {
   const parsed = catalogPriceSchema.safeParse({ minPrice: "0", maxPrice: "10.5" });
@@ -44,6 +44,28 @@ test("catalogQuerySchema caps limit, rejects a negative offset and bad sort", ()
   assert.equal(catalogQuerySchema.safeParse({ limit: "0" }).success, false);
   assert.equal(catalogQuerySchema.safeParse({ offset: "-1" }).success, false);
   assert.equal(catalogQuerySchema.safeParse({ sort: "cheapest" }).success, false);
+});
+
+test("catalogDateSchema coerces ISO bounds and allows a single one", () => {
+  const parsed = catalogDateSchema.safeParse({
+    createdAfter: "2026-01-01",
+    createdBefore: "2026-06-01",
+  });
+  assert.equal(parsed.success, true);
+  if (parsed.success) {
+    assert.ok(parsed.data.createdAfter instanceof Date);
+    assert.ok(parsed.data.createdBefore instanceof Date);
+  }
+  assert.equal(catalogDateSchema.safeParse({ createdAfter: "2026-01-01" }).success, true);
+  assert.equal(catalogDateSchema.safeParse({}).success, true);
+});
+
+test("catalogDateSchema rejects an inverted range and junk dates", () => {
+  assert.equal(
+    catalogDateSchema.safeParse({ createdAfter: "2026-06-01", createdBefore: "2026-01-01" }).success,
+    false
+  );
+  assert.equal(catalogDateSchema.safeParse({ createdAfter: "not-a-date" }).success, false);
 });
 
 test("catalogQuerySchema coerces verified to a boolean and rejects junk", () => {

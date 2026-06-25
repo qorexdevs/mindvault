@@ -19,6 +19,22 @@ export const catalogPriceSchema = z
     { message: "maxPrice must be >= minPrice", path: ["maxPrice"] }
   );
 
+// createdAfter/createdBefore on the catalog. coerce accepts an ISO date or
+// datetime from the querystring; reject an inverted range up front like the
+// price bounds do, so it never silently returns an empty page.
+export const catalogDateSchema = z
+  .object({
+    createdAfter: z.coerce.date().optional(),
+    createdBefore: z.coerce.date().optional(),
+  })
+  .refine(
+    (v) =>
+      v.createdAfter === undefined ||
+      v.createdBefore === undefined ||
+      v.createdBefore >= v.createdAfter,
+    { message: "createdBefore must be >= createdAfter", path: ["createdBefore"] }
+  );
+
 // trim a text filter and drop it if nothing's left, so a whitespace-only q or
 // publisher is ignored instead of building a useless '%   %' ilike pattern and
 // leaking the blank value into the pagination Link header.
@@ -46,7 +62,8 @@ export const catalogQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   })
-  .and(catalogPriceSchema);
+  .and(catalogPriceSchema)
+  .and(catalogDateSchema);
 
 // PATCH /resources/:id body. every field is optional but at least one must be
 // present, otherwise the update is a no-op that still evicts the paywall cache.

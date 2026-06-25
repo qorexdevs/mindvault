@@ -1,4 +1,4 @@
-import { eq, ne, and, or, ilike, asc, desc, count, sql } from "drizzle-orm";
+import { eq, ne, and, or, ilike, asc, desc, count, gte, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { resources, publishers, verifications } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
@@ -84,6 +84,8 @@ type CatalogFilter = {
   status?: "pending" | "verified" | "rejected";
   minPrice?: number;
   maxPrice?: number;
+  createdAfter?: Date;
+  createdBefore?: Date;
 };
 
 function catalogConditions(opts: CatalogFilter) {
@@ -119,6 +121,12 @@ function catalogConditions(opts: CatalogFilter) {
   }
   if (opts.maxPrice !== undefined) {
     conditions.push(sql`cast(${resources.price} as numeric) <= ${opts.maxPrice}`);
+  }
+  if (opts.createdAfter !== undefined) {
+    conditions.push(gte(resources.createdAt, opts.createdAfter));
+  }
+  if (opts.createdBefore !== undefined) {
+    conditions.push(lte(resources.createdAt, opts.createdBefore));
   }
   return and(...conditions);
 }
