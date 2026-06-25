@@ -79,6 +79,7 @@ export async function getResourceById(id: string) {
 type CatalogFilter = {
   q?: string;
   type?: "file" | "link";
+  mime?: string;
   publisher?: string;
   verified?: boolean;
   status?: "pending" | "verified" | "rejected";
@@ -98,6 +99,9 @@ function catalogConditions(opts: CatalogFilter) {
   }
   if (opts.type) {
     conditions.push(eq(resources.resourceType, opts.type));
+  }
+  if (opts.mime) {
+    conditions.push(ilike(resources.mimeType, `${escapeLike(opts.mime)}%`));
   }
   if (opts.publisher) {
     conditions.push(ilike(publishers.name, `%${escapeLike(opts.publisher)}%`));

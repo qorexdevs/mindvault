@@ -35,6 +35,14 @@ test("catalogQuerySchema trims q and publisher and drops blanks", () => {
   }
 });
 
+test("catalogQuerySchema trims mime and drops a blank", () => {
+  const ok = catalogQuerySchema.safeParse({ mime: "  image  " });
+  assert.equal(ok.success, true);
+  if (ok.success) assert.equal(ok.data.mime, "image");
+  const blank = catalogQuerySchema.safeParse({ mime: "   " });
+  assert.equal(blank.success && blank.data.mime, undefined);
+});
+
 test("catalogQuerySchema takes a known status and rejects a bad one", () => {
   const ok = catalogQuerySchema.safeParse({ status: "rejected" });
   assert.equal(ok.success, true);

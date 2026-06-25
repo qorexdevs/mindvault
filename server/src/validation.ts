@@ -49,6 +49,10 @@ export const catalogQuerySchema = z
   .object({
     q: textFilter,
     type: z.enum(["file", "link"]).optional(),
+    // mime matches a content-type prefix, so "image" catches image/png and
+    // "application/pdf" pins an exact type. link resources have no mime, so this
+    // narrows to files.
+    mime: textFilter,
     publisher: textFilter,
     // verified=true narrows the catalog to resources that passed verification
     verified: z
