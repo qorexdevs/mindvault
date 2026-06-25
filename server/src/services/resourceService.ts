@@ -136,6 +136,9 @@ export async function listCatalog(opts: CatalogFilter & {
         ? sql`lower(${resources.title})`
         : resources.createdAt;
   const order = direction === "asc" ? asc(col) : desc(col);
+  // price and title tie often, and equal sort keys have no inherent order in
+  // postgres, so limit/offset paging could repeat or drop rows between pages.
+  // break ties on the primary key for a stable order across requests.
   return db
     .select({
       id: resources.id,
@@ -150,7 +153,7 @@ export async function listCatalog(opts: CatalogFilter & {
     .from(resources)
     .innerJoin(publishers, eq(resources.publisherId, publishers.id))
     .where(catalogConditions(opts))
-    .orderBy(order)
+    .orderBy(order, asc(resources.id))
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
 }
