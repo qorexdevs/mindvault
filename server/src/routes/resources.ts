@@ -7,6 +7,7 @@ import {
   createLinkResource,
   listCatalog,
   countCatalog,
+  catalogStats,
   getResourceMeta,
   getVerificationDetails,
   updateResource,
@@ -117,6 +118,20 @@ router.get("/resources", async (req, res) => {
       accessUrl: `${config.BASE_URL}/resources/${r.id}`,
     }))
   );
+});
+
+// GET /resources/stats — catalog totals for a dashboard (public). takes the same
+// filters as the catalog so a narrowed view gets its own counts; paging and sort
+// are accepted but ignored. must stay above /resources/:id or "stats" reads as an id.
+router.get("/resources/stats", async (req, res) => {
+  const parsed = catalogQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
+    return;
+  }
+  const { q, type, mime, publisher, verified, status, minPrice, maxPrice, createdAfter, createdBefore } = parsed.data;
+  const stats = await catalogStats({ q, type, mime, publisher, verified, status, minPrice, maxPrice, createdAfter, createdBefore });
+  res.json(stats);
 });
 
 // GET /resources/:id/meta — resource preview (public)

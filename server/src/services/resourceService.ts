@@ -179,6 +179,42 @@ export async function countCatalog(opts: CatalogFilter = {}) {
   return row?.total ?? 0;
 }
 
+export async function catalogStats(opts: CatalogFilter = {}) {
+  // one-pass dashboard counters over the same filters as the catalog: total,
+  // the file/link split, the verification split, and the price range. price is
+  // text, so cast it for min/max/avg; avg comes back rounded to USDC's 7 places.
+  const [row] = await db
+    .select({
+      total: count(),
+      files: sql<number>`count(*) filter (where ${resources.resourceType} = 'file')`,
+      links: sql<number>`count(*) filter (where ${resources.resourceType} = 'link')`,
+      pending: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'pending')`,
+      verified: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'verified')`,
+      rejected: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'rejected')`,
+      minPrice: sql<string | null>`min(cast(${resources.price} as numeric))`,
+      maxPrice: sql<string | null>`max(cast(${resources.price} as numeric))`,
+      avgPrice: sql<string | null>`round(avg(cast(${resources.price} as numeric)), 7)`,
+    })
+    .from(resources)
+    .innerJoin(publishers, eq(resources.publisherId, publishers.id))
+    .where(catalogConditions(opts));
+
+  return {
+    total: Number(row?.total ?? 0),
+    byType: { file: Number(row?.files ?? 0), link: Number(row?.links ?? 0) },
+    byStatus: {
+      pending: Number(row?.pending ?? 0),
+      verified: Number(row?.verified ?? 0),
+      rejected: Number(row?.rejected ?? 0),
+    },
+    price: {
+      min: row?.minPrice ?? null,
+      max: row?.maxPrice ?? null,
+      avg: row?.avgPrice ?? null,
+    },
+  };
+}
+
 export async function getResourceMeta(id: string) {
   const result = await db
     .select({
