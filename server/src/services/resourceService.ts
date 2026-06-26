@@ -1,4 +1,4 @@
-import { eq, ne, and, or, ilike, asc, desc, count, gte, lte, sql } from "drizzle-orm";
+import { eq, ne, and, or, ilike, asc, desc, count, countDistinct, gte, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { resources, publishers, verifications } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
@@ -190,13 +190,15 @@ export async function countCatalog(opts: CatalogFilter = {}) {
 
 export async function catalogStats(opts: CatalogFilter = {}) {
   // one-pass dashboard counters over the same filters as the catalog: total,
-  // the file/link split, the verification split, the free/paid split, and the
-  // price range. price is text, so cast it for min/max/avg/sum; avg and sum come
+  // the distinct seller count, the file/link split, the verification split, the
+  // free/paid split, and the price range. price is text, so cast it for
+  // min/max/avg/sum; avg and sum come
   // back rounded to USDC's 7 places, sum being the catalog value of the current view.
   // avgPaid is the average over paid items only, so free uploads don't drag it to 0.
   const [row] = await db
     .select({
       total: count(),
+      sellers: countDistinct(resources.publisherId),
       files: sql<number>`count(*) filter (where ${resources.resourceType} = 'file')`,
       links: sql<number>`count(*) filter (where ${resources.resourceType} = 'link')`,
       pending: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'pending')`,
@@ -215,6 +217,7 @@ export async function catalogStats(opts: CatalogFilter = {}) {
 
   return {
     total: Number(row?.total ?? 0),
+    sellers: Number(row?.sellers ?? 0),
     byType: { file: Number(row?.files ?? 0), link: Number(row?.links ?? 0) },
     byStatus: {
       pending: Number(row?.pending ?? 0),
