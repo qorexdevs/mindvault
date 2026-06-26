@@ -76,3 +76,12 @@ test("catalogQuerySchema coerces verified to a boolean and rejects junk", () => 
   assert.equal(catalogQuerySchema.safeParse({}).success && catalogQuerySchema.parse({}).verified, undefined);
   assert.equal(catalogQuerySchema.safeParse({ verified: "yes" }).success, false);
 });
+
+test("catalogQuerySchema coerces free to a boolean and rejects junk", () => {
+  const on = catalogQuerySchema.safeParse({ free: "true" });
+  assert.equal(on.success && on.data.free, true);
+  const off = catalogQuerySchema.safeParse({ free: "false" });
+  assert.equal(off.success && off.data.free, false);
+  assert.equal(catalogQuerySchema.parse({}).free, undefined);
+  assert.equal(catalogQuerySchema.safeParse({ free: "1" }).success, false);
+});

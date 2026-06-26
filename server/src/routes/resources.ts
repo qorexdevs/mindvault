@@ -92,8 +92,8 @@ router.get("/resources", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  const { q, type, mime, publisher, verified, status, minPrice, maxPrice, createdAfter, createdBefore } = parsed.data;
-  const filter = { q, type, mime, publisher, verified, status, minPrice, maxPrice, createdAfter, createdBefore };
+  const { q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore } = parsed.data;
+  const filter = { q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore };
   const [catalog, total] = await Promise.all([
     listCatalog(parsed.data),
     countCatalog(filter),
@@ -102,7 +102,7 @@ router.get("/resources", async (req, res) => {
   const links = pageLinks({
     path: "/resources",
     query: {
-      q, type, mime, publisher, verified, status, minPrice, maxPrice,
+      q, type, mime, publisher, verified, status, free, minPrice, maxPrice,
       createdAfter: createdAfter?.toISOString(),
       createdBefore: createdBefore?.toISOString(),
       sort: parsed.data.sort,
@@ -129,8 +129,8 @@ router.get("/resources/stats", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  const { q, type, mime, publisher, verified, status, minPrice, maxPrice, createdAfter, createdBefore } = parsed.data;
-  const stats = await catalogStats({ q, type, mime, publisher, verified, status, minPrice, maxPrice, createdAfter, createdBefore });
+  const { q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore } = parsed.data;
+  const stats = await catalogStats({ q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore });
   res.json(stats);
 });
 

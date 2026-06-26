@@ -131,7 +131,7 @@ Public read endpoints (no auth):
 | Method | Path | What it returns |
 | --- | --- | --- |
 | `GET` | `/health` | liveness check |
-| `GET` | `/resources` | catalog listing, filterable by `q`, `type`, `mime`, `publisher`, `verified`, `status`, `minPrice`, `maxPrice`, `createdAfter`, `createdBefore`; paged with `limit`/`offset`, sorted with `sort`. Total count is in `X-Total-Count`, paging in the `Link` header |
+| `GET` | `/resources` | catalog listing, filterable by `q`, `type`, `mime`, `publisher`, `verified`, `status`, `free`, `minPrice`, `maxPrice`, `createdAfter`, `createdBefore`; paged with `limit`/`offset`, sorted with `sort`. Total count is in `X-Total-Count`, paging in the `Link` header |
 | `GET` | `/resources/stats` | dashboard counters for the current filter view: `total`, `byType`, `byStatus`, `byPrice` (free/paid), and a `price` block (`min`, `max`, `avg`, `avgPaid`, `sum`) |
 | `GET` | `/resources/:id/meta` | resource preview without paying |
 | `GET` | `/resources/:id/verification` | verification result for a resource |

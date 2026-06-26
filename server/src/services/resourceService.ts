@@ -83,6 +83,7 @@ type CatalogFilter = {
   publisher?: string;
   verified?: boolean;
   status?: "pending" | "verified" | "rejected";
+  free?: boolean;
   minPrice?: number;
   maxPrice?: number;
   createdAfter?: Date;
@@ -117,6 +118,14 @@ function catalogConditions(opts: CatalogFilter) {
       opts.verified
         ? eq(resources.verificationStatus, "verified")
         : ne(resources.verificationStatus, "verified")
+    );
+  }
+  // free splits on price 0 vs anything above it; price is text so cast to numeric
+  if (opts.free !== undefined) {
+    conditions.push(
+      opts.free
+        ? sql`cast(${resources.price} as numeric) = 0`
+        : sql`cast(${resources.price} as numeric) > 0`
     );
   }
   // price is stored as text, cast to numeric so the bounds compare like numbers

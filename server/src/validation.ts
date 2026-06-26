@@ -62,6 +62,12 @@ export const catalogQuerySchema = z
     // status pins the exact verification state. more precise than verified, which
     // can only split passed vs everything-else; status wins when both are sent.
     status: z.enum(["pending", "verified", "rejected"]).optional(),
+    // free=true narrows to price 0 uploads, free=false to paid ones. composes
+    // with minPrice/maxPrice, so free=false plus a floor still applies the floor.
+    free: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((v) => (v === undefined ? undefined : v === "true")),
     sort: z.enum(CATALOG_SORTS).default("newest"),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
