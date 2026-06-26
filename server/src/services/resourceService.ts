@@ -184,6 +184,7 @@ export async function catalogStats(opts: CatalogFilter = {}) {
   // the file/link split, the verification split, the free/paid split, and the
   // price range. price is text, so cast it for min/max/avg/sum; avg and sum come
   // back rounded to USDC's 7 places, sum being the catalog value of the current view.
+  // avgPaid is the average over paid items only, so free uploads don't drag it to 0.
   const [row] = await db
     .select({
       total: count(),
@@ -196,6 +197,7 @@ export async function catalogStats(opts: CatalogFilter = {}) {
       minPrice: sql<string | null>`min(cast(${resources.price} as numeric))`,
       maxPrice: sql<string | null>`max(cast(${resources.price} as numeric))`,
       avgPrice: sql<string | null>`round(avg(cast(${resources.price} as numeric)), 7)`,
+      avgPaidPrice: sql<string | null>`round(avg(cast(${resources.price} as numeric)) filter (where cast(${resources.price} as numeric) > 0), 7)`,
       sumPrice: sql<string | null>`round(sum(cast(${resources.price} as numeric)), 7)`,
     })
     .from(resources)
@@ -218,6 +220,7 @@ export async function catalogStats(opts: CatalogFilter = {}) {
       min: row?.minPrice ?? null,
       max: row?.maxPrice ?? null,
       avg: row?.avgPrice ?? null,
+      avgPaid: row?.avgPaidPrice ?? null,
       sum: row?.sumPrice ?? null,
     },
   };
