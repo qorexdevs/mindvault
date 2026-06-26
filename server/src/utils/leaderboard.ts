@@ -1,7 +1,8 @@
 // ranking for GET /publishers/leaderboard. earnings is the default board; sales
-// and resources let it rank by volume instead of money. earnings is the
+// and resources rank by volume instead of money, avg_sale by revenue per sale
+// (earners of premium content over high-volume cheap ones). earnings is the
 // secondary key on every sort so ties land in a stable, sensible order.
-export const LEADERBOARD_SORTS = ["earnings", "sales", "resources"] as const;
+export const LEADERBOARD_SORTS = ["earnings", "sales", "resources", "avg_sale"] as const;
 
 export type LeaderboardSort = (typeof LEADERBOARD_SORTS)[number];
 
@@ -17,13 +18,17 @@ export function rankLeaderboard<T extends RankedEntry>(
 ): T[] {
   const sort = opts.sort ?? "earnings";
   const earned = (e: RankedEntry) => parseFloat(e.totalEarned);
+  // revenue per sale; a publisher with no sales averages 0 and sinks to the bottom
+  const avgSale = (e: RankedEntry) => (e.totalSales > 0 ? earned(e) / e.totalSales : 0);
   const sorted = [...entries].sort((a, b) => {
     const primary =
       sort === "sales"
         ? b.totalSales - a.totalSales
         : sort === "resources"
           ? b.totalResources - a.totalResources
-          : earned(b) - earned(a);
+          : sort === "avg_sale"
+            ? avgSale(b) - avgSale(a)
+            : earned(b) - earned(a);
     return primary !== 0 ? primary : earned(b) - earned(a);
   });
   const start = opts.offset ?? 0;

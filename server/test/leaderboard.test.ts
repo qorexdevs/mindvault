@@ -24,6 +24,25 @@ test("ranks by sales and by resources", () => {
   );
 });
 
+test("ranks by average revenue per sale", () => {
+  // a: 10/1=10, b: 30/2=15, c: 20/9=2.22
+  assert.deepEqual(
+    rankLeaderboard(board, { sort: "avg_sale" }).map((e) => e.name),
+    ["b", "a", "c"]
+  );
+});
+
+test("avg_sale sinks publishers with no sales to the bottom", () => {
+  const withZero = [
+    { name: "none", totalEarned: "0.0000", totalSales: 0, totalResources: 2 },
+    { name: "some", totalEarned: "4.0000", totalSales: 2, totalResources: 1 },
+  ];
+  assert.deepEqual(
+    rankLeaderboard(withZero, { sort: "avg_sale" }).map((e) => e.name),
+    ["some", "none"]
+  );
+});
+
 test("breaks ties on earnings", () => {
   const tied = [
     { name: "low", totalEarned: "5.0000", totalSales: 4, totalResources: 0 },
