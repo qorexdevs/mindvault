@@ -124,6 +124,30 @@ cd ../web
 pnpm dev          # Frontend on :5173
 ```
 
+## HTTP API
+
+Public read endpoints (no auth):
+
+| Method | Path | What it returns |
+| --- | --- | --- |
+| `GET` | `/health` | liveness check |
+| `GET` | `/resources` | catalog listing, filterable by `q`, `type`, `mime`, `publisher`, `verified`, `status`, `minPrice`, `maxPrice`, `createdAfter`, `createdBefore`; paged with `limit`/`offset`, sorted with `sort`. Total count is in `X-Total-Count`, paging in the `Link` header |
+| `GET` | `/resources/stats` | dashboard counters for the current filter view: `total`, `byType`, `byStatus`, `byPrice` (free/paid), and a `price` block (`min`, `max`, `avg`, `avgPaid`, `sum`) |
+| `GET` | `/resources/:id/meta` | resource preview without paying |
+| `GET` | `/resources/:id/verification` | verification result for a resource |
+| `GET` | `/resources/:id` | the resource itself, gated by x402 (returns `402` until paid) |
+| `GET` | `/publishers/wallet/:address` | publisher profile by Stellar address |
+| `GET` | `/publishers/leaderboard` | top publishers by earnings |
+| `GET` | `/agent/status` | verification agent wallet and pricing |
+
+Authenticated endpoints (`X-API-Key`): `POST /resources`, `DELETE /resources/:id`, `GET /publishers/me`, `GET /publishers/me/resources`, `GET /publishers/me/analytics`. The paid agent call is `POST /verify-content`.
+
+`/resources/stats` takes the same query filters as `/resources`, so a narrowed view gets its own counts:
+
+```bash
+curl "https://mindvault-hyr3.onrender.com/resources/stats?type=file&verified=true"
+```
+
 ## Testing the 402 Flow
 
 ```bash
