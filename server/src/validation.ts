@@ -78,9 +78,11 @@ export const catalogQuerySchema = z
 
 // GET /publishers/leaderboard query. sort picks the ranking key; limit is
 // optional so the default stays the full board, but caps a top-N request.
+// offset walks the board past the first page when a limit is set.
 export const leaderboardQuerySchema = z.object({
   sort: z.enum(LEADERBOARD_SORTS).default("earnings"),
   limit: z.coerce.number().int().min(1).max(100).optional(),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 // PATCH /resources/:id body. every field is optional but at least one must be

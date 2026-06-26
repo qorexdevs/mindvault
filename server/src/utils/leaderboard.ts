@@ -13,7 +13,7 @@ type RankedEntry = {
 
 export function rankLeaderboard<T extends RankedEntry>(
   entries: T[],
-  opts: { sort?: LeaderboardSort; limit?: number } = {}
+  opts: { sort?: LeaderboardSort; limit?: number; offset?: number } = {}
 ): T[] {
   const sort = opts.sort ?? "earnings";
   const earned = (e: RankedEntry) => parseFloat(e.totalEarned);
@@ -26,5 +26,7 @@ export function rankLeaderboard<T extends RankedEntry>(
           : earned(b) - earned(a);
     return primary !== 0 ? primary : earned(b) - earned(a);
   });
-  return opts.limit !== undefined ? sorted.slice(0, opts.limit) : sorted;
+  const start = opts.offset ?? 0;
+  const end = opts.limit !== undefined ? start + opts.limit : undefined;
+  return start === 0 && end === undefined ? sorted : sorted.slice(start, end);
 }

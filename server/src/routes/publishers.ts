@@ -11,6 +11,7 @@ import { publishers, resources, payments } from "../db/schema.js";
 import { config } from "../config.js";
 import { leaderboardQuerySchema } from "../validation.js";
 import { rankLeaderboard } from "../utils/leaderboard.js";
+import { pageLinks } from "../utils/page.js";
 
 const router: RouterType = Router();
 
@@ -236,6 +237,18 @@ router.get("/publishers/leaderboard", async (req, res) => {
     };
   });
 
+  const total = leaderboard.length;
+  res.set("X-Total-Count", String(total));
+  if (parsed.data.limit !== undefined) {
+    const links = pageLinks({
+      path: "/publishers/leaderboard",
+      query: { sort: parsed.data.sort },
+      limit: parsed.data.limit,
+      offset: parsed.data.offset,
+      total,
+    });
+    if (links) res.set("Link", links);
+  }
   res.json(rankLeaderboard(leaderboard, parsed.data));
 });
 

@@ -40,3 +40,19 @@ test("limit trims to a top-N without mutating the input", () => {
   assert.deepEqual(top.map((e) => e.name), ["b", "c"]);
   assert.equal(board[0].name, "a");
 });
+
+test("offset walks past the first page", () => {
+  assert.deepEqual(
+    rankLeaderboard(board, { limit: 1, offset: 1 }).map((e) => e.name),
+    ["c"]
+  );
+  // offset without a limit runs to the end of the board
+  assert.deepEqual(
+    rankLeaderboard(board, { offset: 1 }).map((e) => e.name),
+    ["c", "a"]
+  );
+});
+
+test("offset past the end yields an empty page", () => {
+  assert.deepEqual(rankLeaderboard(board, { limit: 5, offset: 10 }), []);
+});
