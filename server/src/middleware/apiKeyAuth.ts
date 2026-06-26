@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { publishers } from "../db/schema.js";
-import { hashApiKey } from "../utils/crypto.js";
+import { hashApiKey, validateApiKey } from "../utils/crypto.js";
 
 declare global {
   namespace Express {
@@ -21,6 +21,11 @@ export async function apiKeyAuth(
 
   if (!key || typeof key !== "string") {
     res.status(401).json({ error: "Missing x-api-key header" });
+    return;
+  }
+
+  if (!validateApiKey(key)) {
+    res.status(401).json({ error: "Invalid API key" });
     return;
   }
 
