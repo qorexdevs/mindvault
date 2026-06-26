@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { CATALOG_SORTS } from "./utils/sort.js";
+import { LEADERBOARD_SORTS } from "./utils/leaderboard.js";
 
 // USDC on Stellar has 7 decimal places; contract rejects zero/negative prices too
 export const priceSchema = z
@@ -74,6 +75,13 @@ export const catalogQuerySchema = z
   })
   .and(catalogPriceSchema)
   .and(catalogDateSchema);
+
+// GET /publishers/leaderboard query. sort picks the ranking key; limit is
+// optional so the default stays the full board, but caps a top-N request.
+export const leaderboardQuerySchema = z.object({
+  sort: z.enum(LEADERBOARD_SORTS).default("earnings"),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
 
 // PATCH /resources/:id body. every field is optional but at least one must be
 // present, otherwise the update is a no-op that still evicts the paywall cache.

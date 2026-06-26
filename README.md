@@ -137,7 +137,7 @@ Public read endpoints (no auth):
 | `GET` | `/resources/:id/verification` | verification result for a resource |
 | `GET` | `/resources/:id` | the resource itself, gated by x402 (returns `402` until paid) |
 | `GET` | `/publishers/wallet/:address` | publisher profile by Stellar address |
-| `GET` | `/publishers/leaderboard` | top publishers by earnings |
+| `GET` | `/publishers/leaderboard` | creator leaderboard, ranked by `sort` (`earnings`, `sales`, `resources`), optionally capped with `limit` |
 | `GET` | `/agent/status` | verification agent wallet and pricing |
 
 Authenticated endpoints (`X-API-Key`): `POST /resources`, `DELETE /resources/:id`, `GET /publishers/me`, `GET /publishers/me/resources`, `GET /publishers/me/analytics`. The paid agent call is `POST /verify-content`.

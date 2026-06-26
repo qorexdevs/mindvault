@@ -9,6 +9,8 @@ import { eq, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { publishers, resources, payments } from "../db/schema.js";
 import { config } from "../config.js";
+import { leaderboardQuerySchema } from "../validation.js";
+import { rankLeaderboard } from "../utils/leaderboard.js";
 
 const router: RouterType = Router();
 
@@ -181,7 +183,13 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
 });
 
 // GET /publishers/leaderboard — public creator leaderboard
-router.get("/publishers/leaderboard", async (_req, res) => {
+router.get("/publishers/leaderboard", async (req, res) => {
+  const parsed = leaderboardQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
+    return;
+  }
+
   // Get all publishers with their resource and payment stats
   const allPublishers = await db.select().from(publishers);
   const allResources = await db
@@ -228,12 +236,7 @@ router.get("/publishers/leaderboard", async (_req, res) => {
     };
   });
 
-  // Sort by earnings descending
-  leaderboard.sort(
-    (a, b) => parseFloat(b.totalEarned) - parseFloat(a.totalEarned)
-  );
-
-  res.json(leaderboard);
+  res.json(rankLeaderboard(leaderboard, parsed.data));
 });
 
 export default router;
