@@ -69,3 +69,27 @@ test("DELETE /resources/:id needs an api key", async () => {
   const res = await fetch(`${base}/resources/abc`, { method: "DELETE" });
   assert.equal(res.status, 401);
 });
+
+test("GET /resources rejects a bad sort before querying", async () => {
+  const res = await fetch(`${base}/resources?sort=cheapest`);
+  assert.equal(res.status, 400);
+  assert.ok((await res.json()).error);
+});
+
+test("GET /resources rejects a negative offset before querying", async () => {
+  const res = await fetch(`${base}/resources?offset=-1`);
+  assert.equal(res.status, 400);
+  assert.ok((await res.json()).error);
+});
+
+test("GET /resources rejects an inverted price range before querying", async () => {
+  const res = await fetch(`${base}/resources?minPrice=10&maxPrice=5`);
+  assert.equal(res.status, 400);
+  assert.ok((await res.json()).error);
+});
+
+test("GET /resources rejects an inverted date range before querying", async () => {
+  const res = await fetch(`${base}/resources?createdAfter=2026-06-01&createdBefore=2026-01-01`);
+  assert.equal(res.status, 400);
+  assert.ok((await res.json()).error);
+});
