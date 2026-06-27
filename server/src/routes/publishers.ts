@@ -154,6 +154,8 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
     0
   );
   const totalSales = allPayments.length;
+  // distinct wallets, so repeat buyers don't inflate the audience size
+  const uniqueBuyers = new Set(allPayments.map((p) => p.payerAddress)).size;
   const totalResources = pubResources.length;
   const listedResources = pubResources.filter((r) => r.listed).length;
   const verifiedResources = pubResources.filter(
@@ -171,6 +173,7 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
       totalEarned: totalEarned.toFixed(4),
       currency: "USDC",
       totalSales,
+      uniqueBuyers,
       totalResources,
       listedResources,
       verification: {
