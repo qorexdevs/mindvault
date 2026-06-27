@@ -5,7 +5,7 @@ import {
   registerPublisher,
   getPublisherResources,
 } from "../services/publisherService.js";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { publishers, resources, payments } from "../db/schema.js";
 import { config } from "../config.js";
@@ -108,7 +108,8 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
 
   const resourceIds = pubResources.map((r) => r.id);
 
-  // Get all payments for these resources
+  // Get all payments for these resources, newest first so recentPayments below
+  // actually shows the latest sales instead of whatever order the db returns.
   let allPayments: any[] = [];
   if (resourceIds.length > 0) {
     allPayments = await db
@@ -120,7 +121,8 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
         paidAt: payments.paidAt,
       })
       .from(payments)
-      .where(inArray(payments.resourceId, resourceIds));
+      .where(inArray(payments.resourceId, resourceIds))
+      .orderBy(desc(payments.paidAt));
   }
 
   // Compute per-resource stats
