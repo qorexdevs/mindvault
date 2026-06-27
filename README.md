@@ -132,7 +132,7 @@ Public read endpoints (no auth):
 | --- | --- | --- |
 | `GET` | `/health` | liveness check |
 | `GET` | `/resources` | catalog listing, filterable by `q`, `type`, `mime`, `publisher`, `verified`, `status`, `free`, `minPrice`, `maxPrice`, `createdAfter`, `createdBefore`; paged with `limit`/`offset`, sorted with `sort`. Total count is in `X-Total-Count`, paging in the `Link` header |
-| `GET` | `/resources/stats` | dashboard counters for the current filter view: `total`, `sellers` (distinct publishers), `byType`, `byStatus`, `byPrice` (free/paid), and a `price` block (`min`, `max`, `avg`, `avgPaid`, `sum`) |
+| `GET` | `/resources/stats` | dashboard counters for the current filter view: `total`, `sellers` (distinct publishers), `byType`, `byStatus`, `byPrice` (free/paid), and a `price` block (`min`, `max`, `avg`, `avgPaid`, `median`, `sum`) |
 | `GET` | `/resources/:id/meta` | resource preview without paying |
 | `GET` | `/resources/:id/verification` | verification result for a resource |
 | `GET` | `/resources/:id` | the resource itself, gated by x402 (returns `402` until paid) |
