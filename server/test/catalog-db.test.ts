@@ -97,6 +97,19 @@ test("catalogStats aggregates over the filtered view", async () => {
   assert.equal(stats.price.max, "12.5");
 });
 
+test("catalogFacets lists distinct mimes and publishers under the filter", async () => {
+  const facets = await svc.catalogFacets();
+  assert.deepEqual(facets.mimeTypes, [{ value: "application/zip", count: 1 }]);
+  assert.deepEqual(facets.publishers, [{ value: "Acme", count: 3 }]);
+});
+
+test("catalogFacets narrows with the catalog filters", async () => {
+  // free=true drops the two paid rows, leaving the free link with no mimeType
+  const free = await svc.catalogFacets({ free: true });
+  assert.equal(free.mimeTypes.length, 0);
+  assert.deepEqual(free.publishers, [{ value: "Acme", count: 1 }]);
+});
+
 test("createLinkResource publishes an unlisted link", async () => {
   const r = await svc.createLinkResource({
     publisherId: pubId,

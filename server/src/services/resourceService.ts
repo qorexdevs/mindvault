@@ -241,6 +241,34 @@ export async function catalogStats(opts: CatalogFilter = {}) {
   };
 }
 
+export async function catalogFacets(opts: CatalogFilter = {}) {
+  // the distinct values available under the current filter so a client can
+  // build mime/publisher dropdowns without scanning the whole catalog. each
+  // facet is its own grouped count, ordered by frequency then value so the
+  // list is stable across requests. links have no mimeType, drop those nulls.
+  const where = catalogConditions(opts);
+  const [mimeTypes, pubs] = await Promise.all([
+    db
+      .select({ value: resources.mimeType, count: count() })
+      .from(resources)
+      .innerJoin(publishers, eq(resources.publisherId, publishers.id))
+      .where(and(where, sql`${resources.mimeType} is not null`))
+      .groupBy(resources.mimeType)
+      .orderBy(desc(count()), asc(resources.mimeType)),
+    db
+      .select({ value: publishers.name, count: count() })
+      .from(resources)
+      .innerJoin(publishers, eq(resources.publisherId, publishers.id))
+      .where(where)
+      .groupBy(publishers.name)
+      .orderBy(desc(count()), asc(publishers.name)),
+  ]);
+  return {
+    mimeTypes: mimeTypes.map((r) => ({ value: r.value, count: Number(r.count) })),
+    publishers: pubs.map((r) => ({ value: r.value, count: Number(r.count) })),
+  };
+}
+
 export async function getResourceMeta(id: string) {
   const result = await db
     .select({

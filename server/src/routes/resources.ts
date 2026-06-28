@@ -8,6 +8,7 @@ import {
   listCatalog,
   countCatalog,
   catalogStats,
+  catalogFacets,
   getResourceMeta,
   getVerificationDetails,
   updateResource,
@@ -132,6 +133,21 @@ router.get("/resources/stats", async (req, res) => {
   const { q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore } = parsed.data;
   const stats = await catalogStats({ q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore });
   res.json(stats);
+});
+
+// GET /resources/facets — distinct mime types and publishers under the current
+// filter, so a client can populate dropdowns. takes the same filters as the
+// catalog; paging and sort are accepted but ignored. above /resources/:id so
+// "facets" doesn't read as an id.
+router.get("/resources/facets", async (req, res) => {
+  const parsed = catalogQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
+    return;
+  }
+  const { q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore } = parsed.data;
+  const facets = await catalogFacets({ q, type, mime, publisher, verified, status, free, minPrice, maxPrice, createdAfter, createdBefore });
+  res.json(facets);
 });
 
 // GET /resources/:id/meta — resource preview (public)
