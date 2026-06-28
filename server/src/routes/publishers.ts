@@ -141,7 +141,7 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
       listed: r.listed,
       createdAt: r.createdAt,
       totalSales: resourcePayments.length,
-      totalEarned: totalEarned.toFixed(4),
+      totalEarned: totalEarned.toFixed(7),
       recentPayments: resourcePayments.slice(0, 5).map((p) => ({
         payerAddress: p.payerAddress,
         amount: p.amount,
@@ -172,7 +172,7 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
 
   res.json({
     summary: {
-      totalEarned: totalEarned.toFixed(4),
+      totalEarned: totalEarned.toFixed(7),
       currency: "USDC",
       totalSales,
       uniqueBuyers,
@@ -238,7 +238,7 @@ router.get("/publishers/leaderboard", async (req, res) => {
         (r) => r.verificationStatus === "verified"
       ).length,
       totalSales: pubPayments.length,
-      totalEarned: totalEarned.toFixed(4),
+      totalEarned: totalEarned.toFixed(7),
     };
   });
 

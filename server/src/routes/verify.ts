@@ -136,7 +136,7 @@ router.get("/agent/status", async (_req, res) => {
       totalVerifications,
       verified,
       rejected,
-      totalEarned: totalEarned.toFixed(4),
+      totalEarned: totalEarned.toFixed(7),
       avgConfidence: avgConfidence.toFixed(2),
     },
     recentActivity: recentWithTitles,
