@@ -5,4 +5,10 @@ import * as schema from "./schema.js";
 
 const client = postgres(config.DATABASE_URL);
 
-export const db = drizzle(client, { schema });
+export let db = drizzle(client, { schema });
+
+// test seam: integration tests swap in an in-memory pglite db so the db-backed
+// queries run for real without a live postgres. never called in production.
+export function __setTestDb(instance: typeof db) {
+  db = instance;
+}
