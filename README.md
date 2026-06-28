@@ -131,7 +131,7 @@ Public read endpoints (no auth):
 | Method | Path | What it returns |
 | --- | --- | --- |
 | `GET` | `/health` | liveness check |
-| `GET` | `/resources` | catalog listing, filterable by `q`, `type`, `mime`, `publisher`, `verified`, `status`, `free`, `minPrice`, `maxPrice`, `createdAfter`, `createdBefore`; paged with `limit`/`offset`, sorted with `sort` (`newest`, `oldest`, `price_asc`, `price_desc`, `title_asc`, `title_desc`, `popular` by sale count). Total count is in `X-Total-Count`, paging in the `Link` header |
+| `GET` | `/resources` | catalog listing, filterable by `q`, `type`, `mime`, `publisher`, `verified`, `status`, `free`, `minPrice`, `maxPrice`, `createdAfter`, `createdBefore`; paged with `limit`/`offset`, sorted with `sort` (`newest`, `oldest`, `price_asc`, `price_desc`, `title_asc`, `title_desc`, `popular` by all-time sale count, `trending` by sales in the last `trendingDays` days, default 7). Total count is in `X-Total-Count`, paging in the `Link` header |
 | `GET` | `/resources/stats` | dashboard counters for the current filter view: `total`, `sellers` (distinct publishers), `byType`, `byStatus`, `byPrice` (free/paid), and a `price` block (`min`, `max`, `avg`, `avgPaid`, `median`, `sum`) |
 | `GET` | `/resources/facets` | distinct `mimeTypes` and `publishers` (each with a count) available under the current filter, for building dropdowns |
 | `GET` | `/resources/:id/meta` | resource preview without paying |

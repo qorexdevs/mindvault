@@ -21,3 +21,7 @@ test("resolveSort maps title options", () => {
 test("resolveSort maps popular to sales desc", () => {
   assert.deepEqual(resolveSort("popular"), { column: "sales", direction: "desc" });
 });
+
+test("resolveSort maps trending to recent_sales desc", () => {
+  assert.deepEqual(resolveSort("trending"), { column: "recent_sales", direction: "desc" });
+});

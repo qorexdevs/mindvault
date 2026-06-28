@@ -148,8 +148,12 @@ export async function listCatalog(opts: CatalogFilter & {
   limit?: number;
   offset?: number;
   sort?: CatalogSort;
+  trendingDays?: number;
 } = {}) {
   const { column, direction } = resolveSort(opts.sort);
+  // trending counts only payments newer than the cutoff, so what's selling this
+  // week outranks an all-time leader that's gone quiet. window defaults to 7 days.
+  const trendingCutoff = new Date(Date.now() - (opts.trendingDays ?? 7) * 86_400_000);
   const col =
     column === "price"
       ? sql`cast(${resources.price} as numeric)`
@@ -157,15 +161,19 @@ export async function listCatalog(opts: CatalogFilter & {
         ? sql`lower(${resources.title})`
         : column === "sales"
           ? sql`(select count(*) from ${payments} where ${payments.resourceId} = ${resources.id})`
-          : resources.createdAt;
+          : column === "recent_sales"
+            ? sql`(select count(*) from ${payments} where ${payments.resourceId} = ${resources.id} and ${payments.paidAt} >= ${trendingCutoff})`
+            : resources.createdAt;
   const order = direction === "asc" ? asc(col) : desc(col);
   // price and title tie often, and equal sort keys have no inherent order in
   // postgres, so limit/offset paging could repeat or drop rows between pages.
-  // break ties on the primary key for a stable order across requests. popular
-  // ties are common (most resources have zero sales), so settle them by newest
-  // first before the id, so the order reads sensibly.
+  // break ties on the primary key for a stable order across requests. sale-count
+  // ties are common (most resources have zero), so settle them by newest first
+  // before the id, so the order reads sensibly.
   const tiebreak =
-    column === "sales" ? [desc(resources.createdAt), asc(resources.id)] : [asc(resources.id)];
+    column === "sales" || column === "recent_sales"
+      ? [desc(resources.createdAt), asc(resources.id)]
+      : [asc(resources.id)];
   return db
     .select({
       id: resources.id,

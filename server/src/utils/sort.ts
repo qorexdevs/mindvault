@@ -1,6 +1,8 @@
 // catalog sort options exposed on GET /resources. price is stored as text, so
 // the service casts it to numeric before ordering; title sorts case-insensitively;
-// popular orders by how many payments a resource has, most sold first.
+// popular orders by how many payments a resource has, most sold first; trending
+// is the same count but only over a recent window, so it favours what's selling
+// now over all-time leaders.
 export const CATALOG_SORTS = [
   "newest",
   "oldest",
@@ -9,12 +11,13 @@ export const CATALOG_SORTS = [
   "title_asc",
   "title_desc",
   "popular",
+  "trending",
 ] as const;
 
 export type CatalogSort = (typeof CATALOG_SORTS)[number];
 
 export function resolveSort(sort: CatalogSort = "newest"): {
-  column: "createdAt" | "price" | "title" | "sales";
+  column: "createdAt" | "price" | "title" | "sales" | "recent_sales";
   direction: "asc" | "desc";
 } {
   switch (sort) {
@@ -30,6 +33,8 @@ export function resolveSort(sort: CatalogSort = "newest"): {
       return { column: "title", direction: "desc" };
     case "popular":
       return { column: "sales", direction: "desc" };
+    case "trending":
+      return { column: "recent_sales", direction: "desc" };
     default:
       return { column: "createdAt", direction: "desc" };
   }

@@ -107,6 +107,7 @@ router.get("/resources", async (req, res) => {
       createdAfter: createdAfter?.toISOString(),
       createdBefore: createdBefore?.toISOString(),
       sort: parsed.data.sort,
+      trendingDays: parsed.data.sort === "trending" ? parsed.data.trendingDays : undefined,
     },
     limit: parsed.data.limit,
     offset: parsed.data.offset,

@@ -70,6 +70,9 @@ export const catalogQuerySchema = z
       .optional()
       .transform((v) => (v === undefined ? undefined : v === "true")),
     sort: z.enum(CATALOG_SORTS).default("newest"),
+    // trendingDays is the look-back window for sort=trending. ignored by other
+    // sorts. capped at a year so the subquery can't be asked for the whole table.
+    trendingDays: z.coerce.number().int().min(1).max(365).default(7),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   })

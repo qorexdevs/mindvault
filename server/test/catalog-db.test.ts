@@ -85,6 +85,29 @@ test("popular sort orders by sale count, newest breaks ties", async () => {
   assert.deepEqual(rows.map((r) => r.title), ["Beta deck", "Gamma pack", "Alpha guide"]);
 });
 
+test("trending sort counts only sales inside the window", async () => {
+  const byTitle = Object.fromEntries(
+    (await svc.listCatalog()).map((r) => [r.title, r.id])
+  );
+  // Alpha guide sold 3 times but 40 days ago; Beta and Gamma sold recently in
+  // the popular test above. the default 7-day window ignores Alpha's old sales.
+  const old = new Date(Date.now() - 40 * 86_400_000);
+  await db.insert(schema.payments).values([
+    { resourceId: byTitle["Alpha guide"], payerAddress: "GO1", recipientAddress: "GW", amount: "0", paidAt: old },
+    { resourceId: byTitle["Alpha guide"], payerAddress: "GO2", recipientAddress: "GW", amount: "0", paidAt: old },
+    { resourceId: byTitle["Alpha guide"], payerAddress: "GO3", recipientAddress: "GW", amount: "0", paidAt: old },
+  ]);
+  // all-time, Alpha leads with three sales
+  const popular = await svc.listCatalog({ sort: "popular" });
+  assert.equal(popular[0].title, "Alpha guide");
+  // last 7 days, the old sales drop off so recent sellers lead and Alpha is last
+  const trending = await svc.listCatalog({ sort: "trending" });
+  assert.deepEqual(trending.map((r) => r.title), ["Beta deck", "Gamma pack", "Alpha guide"]);
+  // a wide window pulls the old sales back in, Alpha leads again
+  const wide = await svc.listCatalog({ sort: "trending", trendingDays: 90 });
+  assert.equal(wide[0].title, "Alpha guide");
+});
+
 test("paging is stable across the limit and offset window", async () => {
   const first = await svc.listCatalog({ sort: "price_asc", limit: 2, offset: 0 });
   const second = await svc.listCatalog({ sort: "price_asc", limit: 2, offset: 2 });
