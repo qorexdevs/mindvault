@@ -88,6 +88,8 @@ test("leaderboard sums earnings in SQL numeric and ranks by them", async () => {
     totalEarned: string;
     totalSales: number;
     totalResources: number;
+    listedResources: number;
+    verifiedResources: number;
   }>;
 
   assert.deepEqual(board.map((e) => e.name), ["Globex", "Acme", "Initech"]);
@@ -95,6 +97,10 @@ test("leaderboard sums earnings in SQL numeric and ranks by them", async () => {
   const acme = board.find((e) => e.name === "Acme")!;
   assert.equal(acme.totalEarned, "4.0000000");
   assert.equal(acme.totalSales, 3);
+  // resource counts come from the SQL group-by, not a JS filter
+  assert.equal(acme.totalResources, 1);
+  assert.equal(acme.listedResources, 1);
+  assert.equal(acme.verifiedResources, 1);
 
   const globex = board.find((e) => e.name === "Globex")!;
   assert.equal(globex.totalEarned, "10.0000000");
@@ -105,4 +111,7 @@ test("leaderboard sums earnings in SQL numeric and ranks by them", async () => {
   assert.equal(initech.totalEarned, "0.0000000");
   assert.equal(initech.totalSales, 0);
   assert.equal(initech.totalResources, 1);
+  // C1 is unlisted and pending, so it counts toward neither
+  assert.equal(initech.listedResources, 0);
+  assert.equal(initech.verifiedResources, 0);
 });

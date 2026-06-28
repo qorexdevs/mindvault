@@ -215,15 +215,18 @@ router.get("/publishers/leaderboard", async (req, res) => {
 
   // Get all publishers with their resource and payment stats
   const allPublishers = await db.select().from(publishers);
-  const allResources = await db
+  // resource counts per publisher in SQL, so the board doesn't pull every
+  // resource row and re-count listed/verified in JS as the catalog grows.
+  const resourceRows = await db
     .select({
-      id: resources.id,
       publisherId: resources.publisherId,
-      price: resources.price,
-      listed: resources.listed,
-      verificationStatus: resources.verificationStatus,
+      totalResources: count(resources.id),
+      listedResources: sql<number>`count(*) filter (where ${resources.listed})`,
+      verifiedResources: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'verified')`,
     })
-    .from(resources);
+    .from(resources)
+    .groupBy(resources.publisherId);
+  const statsByPublisher = new Map(resourceRows.map((r) => [r.publisherId, r]));
   // earnings and sale counts per publisher, summed in SQL numeric so the board
   // can't drift on a big catalog the way a parseFloat reduce would.
   const earnedRows = await db
@@ -238,7 +241,7 @@ router.get("/publishers/leaderboard", async (req, res) => {
   const earnedByPublisher = new Map(earnedRows.map((r) => [r.publisherId, r]));
 
   const leaderboard = allPublishers.map((pub) => {
-    const pubResources = allResources.filter((r) => r.publisherId === pub.id);
+    const stats = statsByPublisher.get(pub.id);
     const earned = earnedByPublisher.get(pub.id);
 
     return {
@@ -246,11 +249,9 @@ router.get("/publishers/leaderboard", async (req, res) => {
       name: pub.name,
       walletAddress: pub.walletAddress,
       joinedAt: pub.createdAt,
-      totalResources: pubResources.length,
-      listedResources: pubResources.filter((r) => r.listed).length,
-      verifiedResources: pubResources.filter(
-        (r) => r.verificationStatus === "verified"
-      ).length,
+      totalResources: Number(stats?.totalResources ?? 0),
+      listedResources: Number(stats?.listedResources ?? 0),
+      verifiedResources: Number(stats?.verifiedResources ?? 0),
       totalSales: Number(earned?.sales ?? 0),
       totalEarned: earned?.earned ?? "0.0000000",
     };
