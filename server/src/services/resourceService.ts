@@ -1,6 +1,6 @@
 import { eq, ne, and, or, ilike, asc, desc, count, countDistinct, gte, lte, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { resources, publishers, verifications } from "../db/schema.js";
+import { resources, publishers, verifications, payments } from "../db/schema.js";
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
 import { escapeLike } from "../utils/like.js";
 import { resolveSort, type CatalogSort } from "../utils/sort.js";
@@ -155,11 +155,17 @@ export async function listCatalog(opts: CatalogFilter & {
       ? sql`cast(${resources.price} as numeric)`
       : column === "title"
         ? sql`lower(${resources.title})`
-        : resources.createdAt;
+        : column === "sales"
+          ? sql`(select count(*) from ${payments} where ${payments.resourceId} = ${resources.id})`
+          : resources.createdAt;
   const order = direction === "asc" ? asc(col) : desc(col);
   // price and title tie often, and equal sort keys have no inherent order in
   // postgres, so limit/offset paging could repeat or drop rows between pages.
-  // break ties on the primary key for a stable order across requests.
+  // break ties on the primary key for a stable order across requests. popular
+  // ties are common (most resources have zero sales), so settle them by newest
+  // first before the id, so the order reads sensibly.
+  const tiebreak =
+    column === "sales" ? [desc(resources.createdAt), asc(resources.id)] : [asc(resources.id)];
   return db
     .select({
       id: resources.id,
@@ -174,7 +180,7 @@ export async function listCatalog(opts: CatalogFilter & {
     .from(resources)
     .innerJoin(publishers, eq(resources.publisherId, publishers.id))
     .where(catalogConditions(opts))
-    .orderBy(order, asc(resources.id))
+    .orderBy(order, ...tiebreak)
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
 }

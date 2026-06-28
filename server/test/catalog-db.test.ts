@@ -71,6 +71,20 @@ test("price sort orders numerically, not as text", async () => {
   assert.deepEqual(desc.map((r) => r.price), ["12.5", "5.0", "0"]);
 });
 
+test("popular sort orders by sale count, newest breaks ties", async () => {
+  const byTitle = Object.fromEntries(
+    (await svc.listCatalog()).map((r) => [r.title, r.id])
+  );
+  // Beta deck sells twice, Gamma pack once, Alpha guide never
+  await db.insert(schema.payments).values([
+    { resourceId: byTitle["Beta deck"], payerAddress: "GP1", recipientAddress: "GW", amount: "5.0" },
+    { resourceId: byTitle["Beta deck"], payerAddress: "GP2", recipientAddress: "GW", amount: "5.0" },
+    { resourceId: byTitle["Gamma pack"], payerAddress: "GP3", recipientAddress: "GW", amount: "12.5" },
+  ]);
+  const rows = await svc.listCatalog({ sort: "popular" });
+  assert.deepEqual(rows.map((r) => r.title), ["Beta deck", "Gamma pack", "Alpha guide"]);
+});
+
 test("paging is stable across the limit and offset window", async () => {
   const first = await svc.listCatalog({ sort: "price_asc", limit: 2, offset: 0 });
   const second = await svc.listCatalog({ sort: "price_asc", limit: 2, offset: 2 });
