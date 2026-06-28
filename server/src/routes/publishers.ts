@@ -5,7 +5,7 @@ import {
   registerPublisher,
   getPublisherResources,
 } from "../services/publisherService.js";
-import { eq, inArray, desc } from "drizzle-orm";
+import { eq, inArray, desc, count, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { publishers, resources, payments } from "../db/schema.js";
 import { config } from "../config.js";
@@ -125,13 +125,33 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
       .orderBy(desc(payments.paidAt));
   }
 
+  // Sum earnings in SQL numeric, not a JS parseFloat reduce, so a big catalog
+  // can't drift the cents. Per-resource here, grand total below.
+  const earnedByResource = new Map<string, string>();
+  let summaryEarned = "0.0000000";
+  if (resourceIds.length > 0) {
+    const earnedRows = await db
+      .select({
+        resourceId: payments.resourceId,
+        earned: sql<string>`round(sum(cast(${payments.amount} as numeric)), 7)`,
+      })
+      .from(payments)
+      .where(inArray(payments.resourceId, resourceIds))
+      .groupBy(payments.resourceId);
+    for (const row of earnedRows) earnedByResource.set(row.resourceId, row.earned);
+
+    const [tot] = await db
+      .select({
+        earned: sql<string>`round(sum(cast(${payments.amount} as numeric)), 7)`,
+      })
+      .from(payments)
+      .where(inArray(payments.resourceId, resourceIds));
+    summaryEarned = tot?.earned ?? "0.0000000";
+  }
+
   // Compute per-resource stats
   const resourceStats = pubResources.map((r) => {
     const resourcePayments = allPayments.filter((p) => p.resourceId === r.id);
-    const totalEarned = resourcePayments.reduce(
-      (sum, p) => sum + parseFloat(p.amount),
-      0
-    );
     return {
       id: r.id,
       title: r.title,
@@ -141,7 +161,7 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
       listed: r.listed,
       createdAt: r.createdAt,
       totalSales: resourcePayments.length,
-      totalEarned: totalEarned.toFixed(7),
+      totalEarned: earnedByResource.get(r.id) ?? "0.0000000",
       recentPayments: resourcePayments.slice(0, 5).map((p) => ({
         payerAddress: p.payerAddress,
         amount: p.amount,
@@ -151,10 +171,7 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
   });
 
   // Summary
-  const totalEarned = allPayments.reduce(
-    (sum, p) => sum + parseFloat(p.amount),
-    0
-  );
+  const totalEarned = summaryEarned;
   const totalSales = allPayments.length;
   // distinct wallets, so repeat buyers don't inflate the audience size
   const uniqueBuyers = new Set(allPayments.map((p) => p.payerAddress)).size;
@@ -172,7 +189,7 @@ router.get("/publishers/me/analytics", apiKeyAuth, async (req, res) => {
 
   res.json({
     summary: {
-      totalEarned: totalEarned.toFixed(7),
+      totalEarned,
       currency: "USDC",
       totalSales,
       uniqueBuyers,
@@ -207,25 +224,22 @@ router.get("/publishers/leaderboard", async (req, res) => {
       verificationStatus: resources.verificationStatus,
     })
     .from(resources);
-  const allPayments = await db
+  // earnings and sale counts per publisher, summed in SQL numeric so the board
+  // can't drift on a big catalog the way a parseFloat reduce would.
+  const earnedRows = await db
     .select({
-      resourceId: payments.resourceId,
-      amount: payments.amount,
-      paidAt: payments.paidAt,
+      publisherId: resources.publisherId,
+      earned: sql<string>`round(sum(cast(${payments.amount} as numeric)), 7)`,
+      sales: count(payments.id),
     })
-    .from(payments);
+    .from(payments)
+    .innerJoin(resources, eq(payments.resourceId, resources.id))
+    .groupBy(resources.publisherId);
+  const earnedByPublisher = new Map(earnedRows.map((r) => [r.publisherId, r]));
 
   const leaderboard = allPublishers.map((pub) => {
     const pubResources = allResources.filter((r) => r.publisherId === pub.id);
-    const pubResourceIds = pubResources.map((r) => r.id);
-    const pubPayments = allPayments.filter((p) =>
-      pubResourceIds.includes(p.resourceId)
-    );
-
-    const totalEarned = pubPayments.reduce(
-      (sum, p) => sum + parseFloat(p.amount),
-      0
-    );
+    const earned = earnedByPublisher.get(pub.id);
 
     return {
       id: pub.id,
@@ -237,8 +251,8 @@ router.get("/publishers/leaderboard", async (req, res) => {
       verifiedResources: pubResources.filter(
         (r) => r.verificationStatus === "verified"
       ).length,
-      totalSales: pubPayments.length,
-      totalEarned: totalEarned.toFixed(7),
+      totalSales: Number(earned?.sales ?? 0),
+      totalEarned: earned?.earned ?? "0.0000000",
     };
   });
 
