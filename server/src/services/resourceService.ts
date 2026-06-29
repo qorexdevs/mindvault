@@ -255,13 +255,25 @@ export async function catalogStats(opts: CatalogFilter = {}) {
   };
 }
 
+// price ranges in ascending order, so a client can build a price filter
+// without guessing the catalog's spread. boundaries are in USDC.
+const PRICE_BUCKETS = ["free", "under_1", "1_to_5", "5_to_20", "20_plus"] as const;
+
 export async function catalogFacets(opts: CatalogFilter = {}) {
   // the distinct values available under the current filter so a client can
   // build mime/publisher dropdowns without scanning the whole catalog. each
   // facet is its own grouped count, ordered by frequency then value so the
   // list is stable across requests. links have no mimeType, drop those nulls.
+  // priceRanges is a fixed taxonomy, so it keeps the ascending order and only
+  // returns ranges that actually hold something under the filter.
   const where = catalogConditions(opts);
-  const [mimeTypes, pubs] = await Promise.all([
+  const priceBucket = sql<string>`case
+    when cast(${resources.price} as numeric) = 0 then 'free'
+    when cast(${resources.price} as numeric) < 1 then 'under_1'
+    when cast(${resources.price} as numeric) < 5 then '1_to_5'
+    when cast(${resources.price} as numeric) < 20 then '5_to_20'
+    else '20_plus' end`;
+  const [mimeTypes, pubs, prices] = await Promise.all([
     db
       .select({ value: resources.mimeType, count: count() })
       .from(resources)
@@ -276,10 +288,21 @@ export async function catalogFacets(opts: CatalogFilter = {}) {
       .where(where)
       .groupBy(publishers.name)
       .orderBy(desc(count()), asc(publishers.name)),
+    db
+      .select({ value: priceBucket, count: count() })
+      .from(resources)
+      .innerJoin(publishers, eq(resources.publisherId, publishers.id))
+      .where(where)
+      .groupBy(priceBucket),
   ]);
+  const priceCounts = new Map(prices.map((r) => [r.value, Number(r.count)]));
   return {
     mimeTypes: mimeTypes.map((r) => ({ value: r.value, count: Number(r.count) })),
     publishers: pubs.map((r) => ({ value: r.value, count: Number(r.count) })),
+    priceRanges: PRICE_BUCKETS.filter((b) => priceCounts.has(b)).map((b) => ({
+      value: b,
+      count: priceCounts.get(b)!,
+    })),
   };
 }
 

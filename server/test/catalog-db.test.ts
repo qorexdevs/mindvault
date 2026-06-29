@@ -138,6 +138,11 @@ test("catalogFacets lists distinct mimes and publishers under the filter", async
   const facets = await svc.catalogFacets();
   assert.deepEqual(facets.mimeTypes, [{ value: "application/zip", count: 1 }]);
   assert.deepEqual(facets.publishers, [{ value: "Acme", count: 3 }]);
+  // 0, 5.0 and 12.5 fall in free and 5_to_20, kept in ascending order
+  assert.deepEqual(facets.priceRanges, [
+    { value: "free", count: 1 },
+    { value: "5_to_20", count: 2 },
+  ]);
 });
 
 test("catalogFacets narrows with the catalog filters", async () => {
@@ -145,6 +150,7 @@ test("catalogFacets narrows with the catalog filters", async () => {
   const free = await svc.catalogFacets({ free: true });
   assert.equal(free.mimeTypes.length, 0);
   assert.deepEqual(free.publishers, [{ value: "Acme", count: 1 }]);
+  assert.deepEqual(free.priceRanges, [{ value: "free", count: 1 }]);
 });
 
 test("createLinkResource publishes an unlisted link", async () => {
