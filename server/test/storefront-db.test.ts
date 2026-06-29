@@ -103,6 +103,17 @@ test("storefront returns public profile and SQL trust stats", async () => {
   assert.ok(body.stats.lastListedAt);
 });
 
+test("storefront previews listed resources only, with accessUrl", async () => {
+  const res = await fetch(`${base}/publishers/${acmeId}`);
+  const body = (await res.json()) as {
+    recentListings: { title: string; accessUrl: string }[];
+  };
+  // A1 and A2 are listed, A3 is delisted and must not show in the storefront
+  const titles = body.recentListings.map((r) => r.title).sort();
+  assert.deepEqual(titles, ["A1", "A2"]);
+  assert.ok(body.recentListings.every((r) => r.accessUrl.includes("/resources/")));
+});
+
 test("storefront never leaks email, earnings or buyer addresses", async () => {
   const res = await fetch(`${base}/publishers/${acmeId}`);
   const raw = await res.text();
