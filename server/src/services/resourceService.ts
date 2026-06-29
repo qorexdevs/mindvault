@@ -261,7 +261,7 @@ const PRICE_BUCKETS = ["free", "under_1", "1_to_5", "5_to_20", "20_plus"] as con
 
 export async function catalogFacets(opts: CatalogFilter = {}) {
   // the distinct values available under the current filter so a client can
-  // build mime/publisher dropdowns without scanning the whole catalog. each
+  // build mime/publisher/type dropdowns without scanning the whole catalog. each
   // facet is its own grouped count, ordered by frequency then value so the
   // list is stable across requests. links have no mimeType, drop those nulls.
   // priceRanges is a fixed taxonomy, so it keeps the ascending order and only
@@ -273,7 +273,7 @@ export async function catalogFacets(opts: CatalogFilter = {}) {
     when cast(${resources.price} as numeric) < 5 then '1_to_5'
     when cast(${resources.price} as numeric) < 20 then '5_to_20'
     else '20_plus' end`;
-  const [mimeTypes, pubs, prices] = await Promise.all([
+  const [mimeTypes, pubs, prices, types] = await Promise.all([
     db
       .select({ value: resources.mimeType, count: count() })
       .from(resources)
@@ -294,6 +294,13 @@ export async function catalogFacets(opts: CatalogFilter = {}) {
       .innerJoin(publishers, eq(resources.publisherId, publishers.id))
       .where(where)
       .groupBy(priceBucket),
+    db
+      .select({ value: resources.resourceType, count: count() })
+      .from(resources)
+      .innerJoin(publishers, eq(resources.publisherId, publishers.id))
+      .where(where)
+      .groupBy(resources.resourceType)
+      .orderBy(desc(count()), asc(resources.resourceType)),
   ]);
   const priceCounts = new Map(prices.map((r) => [r.value, Number(r.count)]));
   return {
@@ -303,6 +310,7 @@ export async function catalogFacets(opts: CatalogFilter = {}) {
       value: b,
       count: priceCounts.get(b)!,
     })),
+    types: types.map((r) => ({ value: r.value, count: Number(r.count) })),
   };
 }
 

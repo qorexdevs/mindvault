@@ -143,6 +143,11 @@ test("catalogFacets lists distinct mimes and publishers under the filter", async
     { value: "free", count: 1 },
     { value: "5_to_20", count: 2 },
   ]);
+  // one file and two links, ordered by frequency
+  assert.deepEqual(facets.types, [
+    { value: "link", count: 2 },
+    { value: "file", count: 1 },
+  ]);
 });
 
 test("catalogFacets narrows with the catalog filters", async () => {
@@ -151,6 +156,7 @@ test("catalogFacets narrows with the catalog filters", async () => {
   assert.equal(free.mimeTypes.length, 0);
   assert.deepEqual(free.publishers, [{ value: "Acme", count: 1 }]);
   assert.deepEqual(free.priceRanges, [{ value: "free", count: 1 }]);
+  assert.deepEqual(free.types, [{ value: "link", count: 1 }]);
 });
 
 test("createLinkResource publishes an unlisted link", async () => {
