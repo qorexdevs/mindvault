@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { config } from "../config.js";
+import { parseVerification, type VerificationResult } from "../utils/verification.js";
 
 const OpenAIClient = (OpenAI as any).default || OpenAI;
 
@@ -8,11 +9,7 @@ const client = new OpenAIClient({
   apiKey: config.OPENROUTER_API_KEY,
 });
 
-export interface VerificationResult {
-  isOriginal: boolean;
-  confidence: number;
-  flags: string[];
-}
+export type { VerificationResult };
 
 export async function checkOriginality(
   content: string,
@@ -56,21 +53,5 @@ Respond with JSON only.`,
     ],
   });
 
-  const text = response.choices[0]?.message?.content?.trim();
-  if (!text) {
-    return { isOriginal: false, confidence: 0, flags: ["No response from verification model"] };
-  }
-
-  try {
-    // Handle responses wrapped in markdown code blocks
-    const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
-    const parsed = JSON.parse(cleaned);
-    return {
-      isOriginal: Boolean(parsed.is_original),
-      confidence: Number(parsed.confidence) || 0,
-      flags: Array.isArray(parsed.flags) ? parsed.flags : [],
-    };
-  } catch {
-    return { isOriginal: false, confidence: 0, flags: ["Failed to parse verification response"] };
-  }
+  return parseVerification(response.choices[0]?.message?.content);
 }
