@@ -2,9 +2,17 @@
 // and resources rank by volume instead of money, avg_sale by revenue per sale
 // (earners of premium content over high-volume cheap ones), avg_resource by
 // revenue per resource (a lean catalog that earns over a sprawling one that
-// barely does). earnings is the secondary key on every sort so ties land in a
-// stable, sensible order.
-export const LEADERBOARD_SORTS = ["earnings", "sales", "resources", "avg_sale", "avg_resource"] as const;
+// barely does), verified by how many resources cleared verification (a trust
+// board over a money one). earnings is the secondary key on every sort so ties
+// land in a stable, sensible order.
+export const LEADERBOARD_SORTS = [
+  "earnings",
+  "sales",
+  "resources",
+  "avg_sale",
+  "avg_resource",
+  "verified",
+] as const;
 
 export type LeaderboardSort = (typeof LEADERBOARD_SORTS)[number];
 
@@ -12,6 +20,7 @@ type RankedEntry = {
   totalEarned: string;
   totalSales: number;
   totalResources: number;
+  verifiedResources: number;
 };
 
 export function rankLeaderboard<T extends RankedEntry>(
@@ -34,7 +43,9 @@ export function rankLeaderboard<T extends RankedEntry>(
             ? avgSale(b) - avgSale(a)
             : sort === "avg_resource"
               ? avgResource(b) - avgResource(a)
-              : earned(b) - earned(a);
+              : sort === "verified"
+                ? b.verifiedResources - a.verifiedResources
+                : earned(b) - earned(a);
     return primary !== 0 ? primary : earned(b) - earned(a);
   });
   const start = opts.offset ?? 0;

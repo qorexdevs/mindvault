@@ -62,6 +62,19 @@ test("avg_sale sinks publishers with no sales to the bottom", () => {
   );
 });
 
+test("ranks by verified resource count, earnings breaks ties", () => {
+  const trust = [
+    { name: "few", totalEarned: "50.0000", totalSales: 9, totalResources: 9, verifiedResources: 1 },
+    { name: "lots", totalEarned: "2.0000", totalSales: 1, totalResources: 9, verifiedResources: 8 },
+    { name: "mid-rich", totalEarned: "40.0000", totalSales: 5, totalResources: 9, verifiedResources: 4 },
+    { name: "mid-poor", totalEarned: "1.0000", totalSales: 1, totalResources: 9, verifiedResources: 4 },
+  ];
+  assert.deepEqual(
+    rankLeaderboard(trust, { sort: "verified" }).map((e) => e.name),
+    ["lots", "mid-rich", "mid-poor", "few"]
+  );
+});
+
 test("breaks ties on earnings", () => {
   const tied = [
     { name: "low", totalEarned: "5.0000", totalSales: 4, totalResources: 0 },
