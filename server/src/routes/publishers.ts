@@ -4,6 +4,7 @@ import { apiKeyAuth } from "../middleware/apiKeyAuth.js";
 import {
   registerPublisher,
   getPublisherResources,
+  getPublisherStorefront,
 } from "../services/publisherService.js";
 import { eq, inArray, desc, count, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
@@ -270,6 +271,17 @@ router.get("/publishers/leaderboard", async (req, res) => {
     if (links) res.set("Link", links);
   }
   res.json(rankLeaderboard(leaderboard, parsed.data));
+});
+
+// GET /publishers/:id — public storefront for vetting a seller. Registered
+// last so the static /publishers/* routes above win over the :id param.
+router.get("/publishers/:id", async (req, res) => {
+  const storefront = await getPublisherStorefront(req.params.id as string);
+  if (!storefront) {
+    res.status(404).json({ error: "Publisher not found" });
+    return;
+  }
+  res.json(storefront);
 });
 
 export default router;
