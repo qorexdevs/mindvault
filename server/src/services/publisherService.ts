@@ -58,12 +58,14 @@ export async function getPublisherStorefront(id: string) {
 
   if (!publisher) return null;
 
-  // listed is what the catalog shows; firstListedAt/lastListedAt frame how
-  // active the seller is, both scoped to listed resources only.
+  // listed is what the catalog shows; verified scopes to listed too so it reads
+  // as "x of the listed total passed verification" — a delisted resource can't
+  // push verified past listed and break the trust ratio. firstListedAt/lastListedAt
+  // frame how active the seller is, all three scoped to listed resources only.
   const [counts] = await db
     .select({
       listed: sql<number>`count(*) filter (where ${resources.listed})`,
-      verified: sql<number>`count(*) filter (where ${resources.verificationStatus} = 'verified')`,
+      verified: sql<number>`count(*) filter (where ${resources.listed} and ${resources.verificationStatus} = 'verified')`,
       firstListedAt: sql<Date | null>`min(${resources.createdAt}) filter (where ${resources.listed})`,
       lastListedAt: sql<Date | null>`max(${resources.createdAt}) filter (where ${resources.listed})`,
     })

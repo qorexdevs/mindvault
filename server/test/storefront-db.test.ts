@@ -50,7 +50,8 @@ before(async () => {
   acmeId = acme.id;
 
   // A1 listed+verified, A2 listed+pending, A3 unlisted+verified (sold then
-  // delisted). listed=2, verified=2, and A3's sale still counts.
+  // delisted). listed=2, verified=1 (A3 is verified but delisted so it's out of
+  // the listed trust ratio), and A3's sale still counts.
   const [a1, , a3] = await db
     .insert(schema.resources)
     .values([
@@ -96,7 +97,9 @@ test("storefront returns public profile and SQL trust stats", async () => {
   assert.equal(body.walletAddress, "GA");
   // only listed resources count toward the public listed total
   assert.equal(body.stats.listed, 2);
-  assert.equal(body.stats.verified, 2);
+  // A1 is the only listed+verified one; A3 is verified but delisted, so the
+  // verified count stays a subset of listed instead of inflating past it
+  assert.equal(body.stats.verified, 1);
   // A3 was delisted but its sale still counts: 2 on A1 + 1 on A3
   assert.equal(body.stats.totalSales, 3);
   assert.ok(body.stats.firstListedAt);
