@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, desc, and, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { publishers, resources, payments } from "../db/schema.js";
 import { generateApiKey, hashApiKey } from "../utils/crypto.js";
@@ -87,6 +87,23 @@ export async function getPublisherStorefront(id: string) {
     totalSales = Number(sales?.n ?? 0);
   }
 
+  // A sample of what they actually sell, so vetting a seller is one call
+  // instead of a storefront read plus a /resources?publisher= follow-up. Only
+  // listed resources, newest first, capped — the full set is the catalog's job.
+  const recentListings = await db
+    .select({
+      id: resources.id,
+      title: resources.title,
+      resourceType: resources.resourceType,
+      price: resources.price,
+      verificationStatus: resources.verificationStatus,
+      createdAt: resources.createdAt,
+    })
+    .from(resources)
+    .where(and(eq(resources.publisherId, id), eq(resources.listed, true)))
+    .orderBy(desc(resources.createdAt))
+    .limit(5);
+
   return {
     id: publisher.id,
     name: publisher.name,
@@ -99,5 +116,6 @@ export async function getPublisherStorefront(id: string) {
       firstListedAt: counts?.firstListedAt ?? null,
       lastListedAt: counts?.lastListedAt ?? null,
     },
+    recentListings,
   };
 }

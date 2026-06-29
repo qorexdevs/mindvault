@@ -281,7 +281,13 @@ router.get("/publishers/:id", async (req, res) => {
     res.status(404).json({ error: "Publisher not found" });
     return;
   }
-  res.json(storefront);
+  res.json({
+    ...storefront,
+    recentListings: storefront.recentListings.map((r) => ({
+      ...r,
+      accessUrl: `${config.BASE_URL}/resources/${r.id}`,
+    })),
+  });
 });
 
 export default router;
