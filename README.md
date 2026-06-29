@@ -139,6 +139,7 @@ Public read endpoints (no auth):
 | `GET` | `/resources/:id` | the resource itself, gated by x402 (returns `402` until paid) |
 | `GET` | `/publishers/wallet/:address` | publisher profile by Stellar address |
 | `GET` | `/publishers/leaderboard` | creator leaderboard, ranked by `sort` (`earnings`, `sales`, `resources`, `avg_sale`, `avg_resource`), paged with `limit`/`offset`. Total is in `X-Total-Count`; when `limit` is set, paging is in the `Link` header |
+| `GET` | `/publishers/:id` | public storefront for vetting a seller: name, wallet, `memberSince`, and a `stats` block (`listed`, `verified`, `totalSales`, `firstListedAt`, `lastListedAt`). No email, earnings or buyer addresses |
 | `GET` | `/agent/status` | verification agent wallet and pricing |
 
 Authenticated endpoints (`X-API-Key`): `POST /resources`, `DELETE /resources/:id`, `GET /publishers/me`, `GET /publishers/me/resources`, `GET /publishers/me/analytics`. The paid agent call is `POST /verify-content`.
