@@ -94,6 +94,23 @@ export class MindVaultClient {
     };
   }
 
+  // Walk the whole catalog, following the Link "next" rel. Yields one page at a
+  // time so a caller can stream a large catalog without holding every row:
+  // `for await (const page of client.catalogPages({ verified: true })) ...`.
+  async *catalogPages(filter: CatalogFilter = {}): AsyncGenerator<Page<unknown>> {
+    let path: string = `/resources${buildQuery(filter as Record<string, unknown>)}`;
+    while (path) {
+      const res = await this.getJson(path);
+      const page: Page<unknown> = {
+        items: (await res.json()) as unknown[],
+        total: Number(res.headers.get("X-Total-Count") ?? 0),
+        links: parseLinkHeader(res.headers.get("Link")),
+      };
+      yield page;
+      path = page.links.next ?? "";
+    }
+  }
+
   // GET /resources/facets — distinct mime types and publishers under a filter,
   // for building dropdowns.
   async facets(filter: CatalogFilter = {}): Promise<unknown> {

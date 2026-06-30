@@ -31,6 +31,32 @@ test("catalog sends filters and returns items, total and links", async () => {
   assert.deepEqual(page.links, { next: "/resources?offset=50" });
 });
 
+test("catalogPages follows the next link until it runs out", async () => {
+  const seen: string[] = [];
+  const pages: Record<string, Response> = {
+    "/resources?limit=2": jsonResponse([{ id: "a" }, { id: "b" }], {
+      headers: { "X-Total-Count": "3", Link: '</resources?offset=2&limit=2>; rel="next"' },
+    }),
+    "/resources?offset=2&limit=2": jsonResponse([{ id: "c" }], {
+      headers: { "X-Total-Count": "3" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const path = String(url).replace("http://x:4021", "");
+    seen.push(path);
+    return pages[path];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const ids: string[] = [];
+  for await (const page of c.catalogPages({ limit: 2 })) {
+    for (const item of page.items as { id: string }[]) ids.push(item.id);
+  }
+
+  assert.deepEqual(seen, ["/resources?limit=2", "/resources?offset=2&limit=2"]);
+  assert.deepEqual(ids, ["a", "b", "c"]);
+});
+
 test("meta hits the preview route", async () => {
   let seen = "";
   const fetch = (async (url: string | URL | Request) => {

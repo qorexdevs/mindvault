@@ -56,6 +56,8 @@ Failures throw `MindVaultError` with `status` and the server's error body.
 ## API
 
 - `catalog(filter)` -> `{ items, total, links }` over `GET /resources`
+- `catalogPages(filter)` async generator that follows the `Link` next rel and
+  yields every page, e.g. `for await (const page of mv.catalogPages({}))`
 - `facets(filter)` / `stats(filter)` over the matching catalog filter
 - `meta(id)` / `verification(id)` resource preview and verification state
 - `storefront(publisherId)` public seller profile
