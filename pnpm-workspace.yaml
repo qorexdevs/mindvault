@@ -2,4 +2,5 @@ packages:
   - "server"
   - "web"
   - "mcp"
+  - "client"
 # Note: contract/ is a Rust/Soroban workspace, managed by cargo (not pnpm).
