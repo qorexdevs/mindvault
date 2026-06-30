@@ -93,6 +93,7 @@ mindVault/
   server/     Express backend, x402 middleware, Supabase, verification agent
   web/        React frontend, Stellar wallet connection, Tailwind
   mcp/        MCP server for AI agent access
+  client/     Client SDK: catalog discovery + x402 pay-and-fetch in one call
 ```
 
 ## Running Locally
@@ -160,6 +161,16 @@ curl -i https://mindvault-hyr3.onrender.com/resources/swcn98besxpp6t1u8e77fqz3
 ```
 
 The `PAYMENT-REQUIRED` header contains the price, destination wallet, network, asset contract, and payment scheme. Any x402-compatible client handles it automatically.
+
+Or use the [client SDK](client/README.md), which wraps catalog discovery and the pay-and-fetch dance:
+
+```ts
+import { MindVaultClient } from "@mindvault/client";
+
+const mv = new MindVaultClient({ baseUrl, secretKey: STELLAR_SECRET_KEY });
+const page = await mv.catalog({ q: "benchmarks", verified: true });
+const bought = await mv.buy(page.items[0].id); // 402 -> sign -> 200, handled
+```
 
 ## What Is Real
 
