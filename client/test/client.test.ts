@@ -57,6 +57,25 @@ test("catalogPages follows the next link until it runs out", async () => {
   assert.deepEqual(ids, ["a", "b", "c"]);
 });
 
+test("catalogAll drains every page into one array", async () => {
+  const pages: Record<string, Response> = {
+    "/resources?limit=2": jsonResponse([{ id: "a" }, { id: "b" }], {
+      headers: { "X-Total-Count": "3", Link: '</resources?offset=2&limit=2>; rel="next"' },
+    }),
+    "/resources?offset=2&limit=2": jsonResponse([{ id: "c" }], {
+      headers: { "X-Total-Count": "3" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const path = String(url).replace("http://x:4021", "");
+    return pages[path];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const items = (await c.catalogAll({ limit: 2 })) as { id: string }[];
+  assert.deepEqual(items.map((i) => i.id), ["a", "b", "c"]);
+});
+
 test("meta hits the preview route", async () => {
   let seen = "";
   const fetch = (async (url: string | URL | Request) => {

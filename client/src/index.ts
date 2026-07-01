@@ -111,6 +111,17 @@ export class MindVaultClient {
     }
   }
 
+  // Collect every catalog item across all pages into one array. The convenience
+  // counterpart to catalogPages for callers that do want the whole list in
+  // memory; for a large catalog prefer catalogPages to stream it page by page.
+  async catalogAll(filter: CatalogFilter = {}): Promise<unknown[]> {
+    const items: unknown[] = [];
+    for await (const page of this.catalogPages(filter)) {
+      items.push(...page.items);
+    }
+    return items;
+  }
+
   // GET /resources/facets — distinct mime types and publishers under a filter,
   // for building dropdowns.
   async facets(filter: CatalogFilter = {}): Promise<unknown> {
