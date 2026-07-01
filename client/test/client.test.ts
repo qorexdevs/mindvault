@@ -103,6 +103,53 @@ test("catalogItems streams items and stops fetching on early break", async () =>
   assert.deepEqual(seen, ["/resources?limit=2"]);
 });
 
+test("catalogCount reads the total from one capped request", async () => {
+  let seen = "";
+  const fetch = (async (url: string | URL | Request) => {
+    seen = String(url);
+    return jsonResponse([{ id: "a" }], { headers: { "X-Total-Count": "137" } });
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const total = await c.catalogCount({ verified: true });
+
+  assert.equal(total, 137);
+  assert.equal(seen, "http://x:4021/resources?verified=true&limit=1");
+});
+
+test("catalogFind returns the first match and stops paging early", async () => {
+  const seen: string[] = [];
+  const pages: Record<string, Response> = {
+    "/resources?limit=2": jsonResponse([{ id: "a" }, { id: "b" }], {
+      headers: { "X-Total-Count": "4", Link: '</resources?offset=2&limit=2>; rel="next"' },
+    }),
+    "/resources?offset=2&limit=2": jsonResponse([{ id: "c" }, { id: "d" }], {
+      headers: { "X-Total-Count": "4" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const path = String(url).replace("http://x:4021", "");
+    seen.push(path);
+    return pages[path];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const hit = await c.catalogFind((item) => (item as { id: string }).id === "b", { limit: 2 });
+
+  assert.deepEqual(hit, { id: "b" });
+  assert.deepEqual(seen, ["/resources?limit=2"]);
+});
+
+test("catalogFind returns undefined when nothing matches", async () => {
+  const c = new MindVaultClient({
+    baseUrl: "http://x:4021",
+    fetch: (async () =>
+      jsonResponse([{ id: "a" }], { headers: { "X-Total-Count": "1" } })) as typeof globalThis.fetch,
+  });
+  const hit = await c.catalogFind((item) => (item as { id: string }).id === "zzz");
+  assert.equal(hit, undefined);
+});
+
 test("meta hits the preview route", async () => {
   let seen = "";
   const fetch = (async (url: string | URL | Request) => {

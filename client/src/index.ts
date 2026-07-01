@@ -131,6 +131,29 @@ export class MindVaultClient {
     }
   }
 
+  // Total catalog items matching a filter, without draining the list. Sends one
+  // request capped at a single row and reads X-Total-Count, so counting a large
+  // catalog stays cheap next to catalogAll.
+  async catalogCount(filter: CatalogFilter = {}): Promise<number> {
+    const res = await this.getJson(
+      `/resources${buildQuery({ ...filter, limit: 1 } as Record<string, unknown>)}`
+    );
+    return Number(res.headers.get("X-Total-Count") ?? 0);
+  }
+
+  // First catalog item matching a predicate, streaming page by page and stopping
+  // as soon as one hits - a match on page one never fetches page two. Returns
+  // undefined when nothing across the catalog matches.
+  async catalogFind(
+    predicate: (item: unknown) => boolean,
+    filter: CatalogFilter = {}
+  ): Promise<unknown | undefined> {
+    for await (const item of this.catalogItems(filter)) {
+      if (predicate(item)) return item;
+    }
+    return undefined;
+  }
+
   // GET /resources/facets — distinct mime types and publishers under a filter,
   // for building dropdowns.
   async facets(filter: CatalogFilter = {}): Promise<unknown> {

@@ -62,6 +62,10 @@ Failures throw `MindVaultError` with `status` and the server's error body.
   `catalogPages` instead for a large catalog you'd rather stream
 - `catalogItems(filter)` async generator that yields one item at a time across
   page boundaries, so `break` stops early without fetching the rest
+- `catalogCount(filter)` -> `number` reads `X-Total-Count` from one capped
+  request, so counting a large catalog skips draining it
+- `catalogFind(predicate, filter)` -> first item matching `predicate`, streaming
+  page by page and stopping on the first hit, `undefined` when none match
 - `facets(filter)` / `stats(filter)` over the matching catalog filter
 - `meta(id)` / `verification(id)` resource preview and verification state
 - `storefront(publisherId)` public seller profile
