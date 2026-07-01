@@ -60,6 +60,8 @@ Failures throw `MindVaultError` with `status` and the server's error body.
   yields every page, e.g. `for await (const page of mv.catalogPages({}))`
 - `catalogAll(filter)` -> `unknown[]` drains every page into one array; use
   `catalogPages` instead for a large catalog you'd rather stream
+- `catalogItems(filter)` async generator that yields one item at a time across
+  page boundaries, so `break` stops early without fetching the rest
 - `facets(filter)` / `stats(filter)` over the matching catalog filter
 - `meta(id)` / `verification(id)` resource preview and verification state
 - `storefront(publisherId)` public seller profile

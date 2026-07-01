@@ -122,6 +122,15 @@ export class MindVaultClient {
     return items;
   }
 
+  // Stream the catalog one item at a time across page boundaries, so a caller
+  // can `for await (const item of client.catalogItems(...))` and break early
+  // without draining the rest: `break` stops the next page from being fetched.
+  async *catalogItems(filter: CatalogFilter = {}): AsyncGenerator<unknown> {
+    for await (const page of this.catalogPages(filter)) {
+      yield* page.items;
+    }
+  }
+
   // GET /resources/facets — distinct mime types and publishers under a filter,
   // for building dropdowns.
   async facets(filter: CatalogFilter = {}): Promise<unknown> {
