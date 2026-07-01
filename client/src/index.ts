@@ -141,6 +141,19 @@ export class MindVaultClient {
     return Number(res.headers.get("X-Total-Count") ?? 0);
   }
 
+  // First n catalog items across pages, stopping as soon as it has them - asking
+  // for 5 items over 2-a-page fetches three pages, not the whole catalog. Returns
+  // fewer than n (down to none) when the catalog runs out first.
+  async catalogTake(n: number, filter: CatalogFilter = {}): Promise<unknown[]> {
+    const items: unknown[] = [];
+    if (n <= 0) return items;
+    for await (const item of this.catalogItems(filter)) {
+      items.push(item);
+      if (items.length >= n) break;
+    }
+    return items;
+  }
+
   // First catalog item matching a predicate, streaming page by page and stopping
   // as soon as one hits - a match on page one never fetches page two. Returns
   // undefined when nothing across the catalog matches.

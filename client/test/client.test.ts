@@ -117,6 +117,42 @@ test("catalogCount reads the total from one capped request", async () => {
   assert.equal(seen, "http://x:4021/resources?verified=true&limit=1");
 });
 
+test("catalogTake stops fetching once it has enough items", async () => {
+  const seen: string[] = [];
+  const pages: Record<string, Response> = {
+    "/resources?limit=2": jsonResponse([{ id: "a" }, { id: "b" }], {
+      headers: { "X-Total-Count": "4", Link: '</resources?offset=2&limit=2>; rel="next"' },
+    }),
+    "/resources?offset=2&limit=2": jsonResponse([{ id: "c" }, { id: "d" }], {
+      headers: { "X-Total-Count": "4" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const path = String(url).replace("http://x:4021", "");
+    seen.push(path);
+    return pages[path];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const items = await c.catalogTake(3, { limit: 2 });
+
+  assert.deepEqual(items, [{ id: "a" }, { id: "b" }, { id: "c" }]);
+  assert.deepEqual(seen, ["/resources?limit=2", "/resources?offset=2&limit=2"]);
+});
+
+test("catalogTake returns nothing for a non-positive count without fetching", async () => {
+  let called = false;
+  const c = new MindVaultClient({
+    baseUrl: "http://x:4021",
+    fetch: (async () => {
+      called = true;
+      return jsonResponse([{ id: "a" }], { headers: { "X-Total-Count": "1" } });
+    }) as typeof globalThis.fetch,
+  });
+  assert.deepEqual(await c.catalogTake(0), []);
+  assert.equal(called, false);
+});
+
 test("catalogFind returns the first match and stops paging early", async () => {
   const seen: string[] = [];
   const pages: Record<string, Response> = {

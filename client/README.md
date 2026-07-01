@@ -64,6 +64,8 @@ Failures throw `MindVaultError` with `status` and the server's error body.
   page boundaries, so `break` stops early without fetching the rest
 - `catalogCount(filter)` -> `number` reads `X-Total-Count` from one capped
   request, so counting a large catalog skips draining it
+- `catalogTake(n, filter)` -> `unknown[]` first `n` items across pages, stopping
+  once it has them instead of walking the whole catalog
 - `catalogFind(predicate, filter)` -> first item matching `predicate`, streaming
   page by page and stopping on the first hit, `undefined` when none match
 - `facets(filter)` / `stats(filter)` over the matching catalog filter
