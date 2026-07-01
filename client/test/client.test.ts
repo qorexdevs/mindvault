@@ -186,6 +186,41 @@ test("catalogFind returns undefined when nothing matches", async () => {
   assert.equal(hit, undefined);
 });
 
+test("catalogTakeWhile keeps the leading run and stops paging at the first miss", async () => {
+  const seen: string[] = [];
+  const pages: Record<string, Response> = {
+    "/resources?limit=2": jsonResponse([{ score: 9 }, { score: 7 }], {
+      headers: { "X-Total-Count": "4", Link: '</resources?offset=2&limit=2>; rel="next"' },
+    }),
+    "/resources?offset=2&limit=2": jsonResponse([{ score: 3 }, { score: 1 }], {
+      headers: { "X-Total-Count": "4" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const path = String(url).replace("http://x:4021", "");
+    seen.push(path);
+    return pages[path];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const items = await c.catalogTakeWhile((item) => (item as { score: number }).score >= 5, {
+    limit: 2,
+  });
+
+  assert.deepEqual(items, [{ score: 9 }, { score: 7 }]);
+  assert.deepEqual(seen, ["/resources?limit=2", "/resources?offset=2&limit=2"]);
+});
+
+test("catalogTakeWhile returns nothing when the first item already fails", async () => {
+  const c = new MindVaultClient({
+    baseUrl: "http://x:4021",
+    fetch: (async () =>
+      jsonResponse([{ score: 1 }], { headers: { "X-Total-Count": "1" } })) as typeof globalThis.fetch,
+  });
+  const items = await c.catalogTakeWhile((item) => (item as { score: number }).score >= 5);
+  assert.deepEqual(items, []);
+});
+
 test("meta hits the preview route", async () => {
   let seen = "";
   const fetch = (async (url: string | URL | Request) => {

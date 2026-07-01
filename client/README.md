@@ -68,6 +68,9 @@ Failures throw `MindVaultError` with `status` and the server's error body.
   once it has them instead of walking the whole catalog
 - `catalogFind(predicate, filter)` -> first item matching `predicate`, streaming
   page by page and stopping on the first hit, `undefined` when none match
+- `catalogTakeWhile(predicate, filter)` -> `unknown[]` leading items while
+  `predicate` holds, stopping at the first miss; on a sorted catalog it grabs the
+  run at the front without draining the tail
 - `facets(filter)` / `stats(filter)` over the matching catalog filter
 - `meta(id)` / `verification(id)` resource preview and verification state
 - `storefront(publisherId)` public seller profile

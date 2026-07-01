@@ -167,6 +167,22 @@ export class MindVaultClient {
     return undefined;
   }
 
+  // Leading catalog items while a predicate holds, stopping at the first miss -
+  // on a sorted catalog (by score, recency, ...) this grabs the run at the front
+  // without draining the tail, and the first item that fails ends paging. Returns
+  // an empty array when the first item already fails.
+  async catalogTakeWhile(
+    predicate: (item: unknown) => boolean,
+    filter: CatalogFilter = {}
+  ): Promise<unknown[]> {
+    const items: unknown[] = [];
+    for await (const item of this.catalogItems(filter)) {
+      if (!predicate(item)) break;
+      items.push(item);
+    }
+    return items;
+  }
+
   // GET /resources/facets — distinct mime types and publishers under a filter,
   // for building dropdowns.
   async facets(filter: CatalogFilter = {}): Promise<unknown> {
