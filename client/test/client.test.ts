@@ -221,6 +221,55 @@ test("catalogTakeWhile returns nothing when the first item already fails", async
   assert.deepEqual(items, []);
 });
 
+test("catalogFilter caps at limit matches and stops paging early", async () => {
+  const seen: string[] = [];
+  const pages: Record<string, Response> = {
+    "/resources?limit=2": jsonResponse([{ kind: "pdf" }, { kind: "img" }], {
+      headers: { "X-Total-Count": "4", Link: '</resources?offset=2&limit=2>; rel="next"' },
+    }),
+    "/resources?offset=2&limit=2": jsonResponse([{ kind: "pdf" }, { kind: "pdf" }], {
+      headers: { "X-Total-Count": "4" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const path = String(url).replace("http://x:4021", "");
+    seen.push(path);
+    return pages[path];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const items = await c.catalogFilter(
+    (item) => (item as { kind: string }).kind === "pdf",
+    { limit: 2 },
+    2
+  );
+
+  assert.deepEqual(items, [{ kind: "pdf" }, { kind: "pdf" }]);
+  assert.deepEqual(seen, ["/resources?limit=2", "/resources?offset=2&limit=2"]);
+});
+
+test("catalogFilter with no limit collects every match across pages", async () => {
+  const pages: Record<string, Response> = {
+    "/resources?limit=2": jsonResponse([{ kind: "pdf" }, { kind: "img" }], {
+      headers: { "X-Total-Count": "4", Link: '</resources?offset=2&limit=2>; rel="next"' },
+    }),
+    "/resources?offset=2&limit=2": jsonResponse([{ kind: "img" }, { kind: "pdf" }], {
+      headers: { "X-Total-Count": "4" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const path = String(url).replace("http://x:4021", "");
+    return pages[path];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const items = await c.catalogFilter((item) => (item as { kind: string }).kind === "pdf", {
+    limit: 2,
+  });
+
+  assert.deepEqual(items, [{ kind: "pdf" }, { kind: "pdf" }]);
+});
+
 test("meta hits the preview route", async () => {
   let seen = "";
   const fetch = (async (url: string | URL | Request) => {

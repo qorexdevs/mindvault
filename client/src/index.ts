@@ -183,6 +183,25 @@ export class MindVaultClient {
     return items;
   }
 
+  // Catalog items matching a predicate across pages, optionally capped at `limit`
+  // matches so it stops early - pulling the first few hits out of a large catalog
+  // never drains the tail, while catalogTake counts items and catalogFind stops at
+  // one. Omit limit (or pass Infinity) to collect every match.
+  async catalogFilter(
+    predicate: (item: unknown) => boolean,
+    filter: CatalogFilter = {},
+    limit = Infinity
+  ): Promise<unknown[]> {
+    const items: unknown[] = [];
+    if (limit <= 0) return items;
+    for await (const item of this.catalogItems(filter)) {
+      if (!predicate(item)) continue;
+      items.push(item);
+      if (items.length >= limit) break;
+    }
+    return items;
+  }
+
   // GET /resources/facets — distinct mime types and publishers under a filter,
   // for building dropdowns.
   async facets(filter: CatalogFilter = {}): Promise<unknown> {

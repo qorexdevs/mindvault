@@ -71,6 +71,9 @@ Failures throw `MindVaultError` with `status` and the server's error body.
 - `catalogTakeWhile(predicate, filter)` -> `unknown[]` leading items while
   `predicate` holds, stopping at the first miss; on a sorted catalog it grabs the
   run at the front without draining the tail
+- `catalogFilter(predicate, filter, limit?)` -> `unknown[]` items matching
+  `predicate`, capped at `limit` matches so it stops paging early; omit `limit` to
+  collect every match
 - `facets(filter)` / `stats(filter)` over the matching catalog filter
 - `meta(id)` / `verification(id)` resource preview and verification state
 - `storefront(publisherId)` public seller profile
