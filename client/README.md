@@ -83,3 +83,18 @@ Failures throw `MindVaultError` with `status` and the server's error body.
 `filter` matches the server query schema: `q`, `type`, `mime`, `publisher`,
 `verified`, `status`, `free`, `minPrice`, `maxPrice`, `createdAfter`,
 `createdBefore`, `sort`, `trendingDays`, `limit`, `offset`.
+
+## Example
+
+`examples/discover-and-buy.ts` runs the whole flow end to end: browse the
+verified catalog, read the facets, preview the cheapest resource, then pay for
+it. Point it at a server and run it:
+
+```bash
+MINDVAULT_URL=https://your-mindvault-server \
+STELLAR_SECRET_KEY=S... \
+pnpm example
+```
+
+`STELLAR_SECRET_KEY` is optional; without it the script stops right before the
+payment so you can try discovery against any server.
