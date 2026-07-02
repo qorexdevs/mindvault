@@ -49,7 +49,7 @@ The verification agent has processed 7 verifications, approved 2, rejected 5, an
 
 **Creators** store their resources, set a price in USDC, and receive payments directly to their Stellar wallet every time someone accesses their work. No platform cut.
 
-**AI Agents** can browse the catalog, pay for resources, and even publish their own — all programmatically through the API or MCP server. No accounts, no OAuth. An HTTP request and a Stellar payment is all they need.
+**AI Agents** can browse the catalog, pay for resources, and even publish their own — all programmatically through the API, the MCP server, or the typed client SDK. No accounts, no OAuth. An HTTP request and a Stellar payment is all they need.
 
 **Humans** connect a browser wallet (Freighter, xBull, etc.), browse the vault, and pay to access resources with one click.
 
@@ -85,6 +85,32 @@ codex mcp add mindvault -- node /path/to/mindVault/mcp/dist/index.js
 ```
 
 An agent can set up a wallet, register as a publisher, publish a resource (paying for verification), and then another agent can discover and buy that resource. The full agent-to-agent economy runs through x402.
+
+## Client SDK
+
+`@mindvault/client` wraps catalog discovery and the whole 402 -> sign -> retry
+dance, so a script or agent gets a resource in one call instead of hand-rolling
+the payment flow. Discovery reads need no wallet; only `buy()` needs a key.
+
+```ts
+import { MindVaultClient } from "@mindvault/client";
+
+const mv = new MindVaultClient({
+  baseUrl: "https://your-mindvault-server",
+  secretKey: process.env.STELLAR_SECRET_KEY, // S..., only needed to buy
+});
+
+// browse without paying
+const page = await mv.catalog({ q: "benchmarks", verified: true, limit: 20 });
+
+// pay USDC on Stellar and get the resource back, 402 handled for you
+const bought = await mv.buy(page.items[0].id);
+console.log(bought.url ?? bought.bytes, bought.receipt);
+```
+
+It also streams large catalogs (`catalogPages`, `catalogItems`) and has
+`catalogFind` / `catalogTakeWhile` / `catalogFilter` helpers that stop paging
+early. Full API in [`client/README.md`](client/README.md).
 
 ## Project Structure
 
