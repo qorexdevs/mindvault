@@ -35,3 +35,17 @@ test("parseLinkHeader maps rel to url", () => {
     prev: "/resources?offset=0",
   });
 });
+
+test("parseLinkHeader keeps urls that contain a comma", () => {
+  const h =
+    '</resources?q=a,b&offset=50>; rel="next", </resources?q=a,b>; rel="prev"';
+  assert.deepEqual(parseLinkHeader(h), {
+    next: "/resources?q=a,b&offset=50",
+    prev: "/resources?q=a,b",
+  });
+});
+
+test("parseLinkHeader reads rel that is unquoted or not first", () => {
+  const h = '</resources?offset=50>; title="page 2"; rel=next';
+  assert.deepEqual(parseLinkHeader(h), { next: "/resources?offset=50" });
+});

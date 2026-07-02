@@ -67,12 +67,31 @@ export function buildQuery(filter: Record<string, unknown> = {}): string {
 
 // Parse RFC 5988 Link header into a { rel: url } map, so a caller can page
 // without rebuilding the query. Returns {} when the header is absent.
+//
+// Commas are legal inside a URL (RFC 3986), so splitting the header on "," drops
+// any link whose target carries one. Split on the commas between entries instead
+// (the ones outside the <...> target), then read rel from anywhere in the params,
+// quoted or not.
 export function parseLinkHeader(header: string | null): Record<string, string> {
   if (!header) return {};
   const out: Record<string, string> = {};
-  for (const part of header.split(",")) {
-    const m = part.match(/<([^>]+)>\s*;\s*rel="([^"]+)"/);
-    if (m) out[m[2]] = m[1];
+  let inUrl = false;
+  let start = 0;
+  const entries: string[] = [];
+  for (let i = 0; i < header.length; i++) {
+    const c = header[i];
+    if (c === "<") inUrl = true;
+    else if (c === ">") inUrl = false;
+    else if (c === "," && !inUrl) {
+      entries.push(header.slice(start, i));
+      start = i + 1;
+    }
+  }
+  entries.push(header.slice(start));
+  for (const entry of entries) {
+    const url = entry.match(/<([^>]*)>/);
+    const rel = entry.match(/;\s*rel\s*=\s*"?([^",;]+)"?/);
+    if (url && rel) out[rel[1].trim()] = url[1];
   }
   return out;
 }
