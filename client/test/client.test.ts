@@ -57,6 +57,38 @@ test("catalogPages follows the next link until it runs out", async () => {
   assert.deepEqual(ids, ["a", "b", "c"]);
 });
 
+test("catalogPages follows an absolute next link", async () => {
+  const seen: string[] = [];
+  const pages: Record<string, Response> = {
+    "http://x:4021/resources?limit=1": jsonResponse([{ id: "a" }], {
+      headers: {
+        "X-Total-Count": "2",
+        Link: '<http://x:4021/resources?offset=1&limit=1>; rel="next"',
+      },
+    }),
+    "http://x:4021/resources?offset=1&limit=1": jsonResponse([{ id: "b" }], {
+      headers: { "X-Total-Count": "2" },
+    }),
+  };
+  const fetch = (async (url: string | URL | Request) => {
+    const target = String(url);
+    seen.push(target);
+    return pages[target];
+  }) as typeof globalThis.fetch;
+
+  const c = new MindVaultClient({ baseUrl: "http://x:4021", fetch });
+  const ids: string[] = [];
+  for await (const page of c.catalogPages({ limit: 1 })) {
+    for (const item of page.items as { id: string }[]) ids.push(item.id);
+  }
+
+  assert.deepEqual(seen, [
+    "http://x:4021/resources?limit=1",
+    "http://x:4021/resources?offset=1&limit=1",
+  ]);
+  assert.deepEqual(ids, ["a", "b"]);
+});
+
 test("catalogAll drains every page into one array", async () => {
   const pages: Record<string, Response> = {
     "/resources?limit=2": jsonResponse([{ id: "a" }, { id: "b" }], {

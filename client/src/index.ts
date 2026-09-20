@@ -78,7 +78,7 @@ export class MindVaultClient {
   }
 
   private async getJson<T>(path: string): Promise<Response> {
-    const res = await this.fetch(`${this.baseUrl}${path}`);
+    const res = await this.fetch(new URL(path, this.baseUrl).toString());
     if (!res.ok) throw new MindVaultError(res.status, await safeJson(res));
     return res;
   }
