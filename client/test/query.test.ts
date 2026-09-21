@@ -45,6 +45,11 @@ test("parseLinkHeader keeps urls that contain a comma", () => {
   });
 });
 
+test("parseLinkHeader keeps commas in quoted link parameters", () => {
+  const h = '</resources?offset=50>; title="page, two"; rel="next"';
+  assert.deepEqual(parseLinkHeader(h), { next: "/resources?offset=50" });
+});
+
 test("parseLinkHeader reads rel that is unquoted or not first", () => {
   const h = '</resources?offset=50>; title="page 2"; rel=next';
   assert.deepEqual(parseLinkHeader(h), { next: "/resources?offset=50" });
