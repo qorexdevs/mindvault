@@ -89,6 +89,26 @@ test("catalogPages follows an absolute next link", async () => {
   assert.deepEqual(ids, ["a", "b"]);
 });
 
+test("catalogPages rejects a repeated next link before fetching it again", async () => {
+  let calls = 0;
+  const c = new MindVaultClient({
+    baseUrl: "http://x:4021",
+    fetch: (async () => {
+      calls++;
+      if (calls > 1) throw new Error("unexpected repeat fetch");
+      return jsonResponse([{ id: "a" }], {
+        headers: {
+          "X-Total-Count": "2",
+          Link: '<http://x:4021/resources?limit=1>; rel="next"',
+        },
+      });
+    }) as typeof globalThis.fetch,
+  });
+
+  await assert.rejects(c.catalogAll({ limit: 1 }), /catalog pagination repeated a page/);
+  assert.equal(calls, 1);
+});
+
 test("catalogAll drains every page into one array", async () => {
   const pages: Record<string, Response> = {
     "/resources?limit=2": jsonResponse([{ id: "a" }, { id: "b" }], {

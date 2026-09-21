@@ -99,7 +99,11 @@ export class MindVaultClient {
   // `for await (const page of client.catalogPages({ verified: true })) ...`.
   async *catalogPages(filter: CatalogFilter = {}): AsyncGenerator<Page<unknown>> {
     let path: string = `/resources${buildQuery(filter as Record<string, unknown>)}`;
+    const seen = new Set<string>();
     while (path) {
+      const url = new URL(path, this.baseUrl).toString();
+      if (seen.has(url)) throw new Error("catalog pagination repeated a page");
+      seen.add(url);
       const res = await this.getJson(path);
       const page: Page<unknown> = {
         items: (await res.json()) as unknown[],
