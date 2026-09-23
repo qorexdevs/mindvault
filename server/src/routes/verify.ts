@@ -39,6 +39,16 @@ const verifyRoutes: RoutesConfig = {
 
 const verifyPaywall = paymentMiddleware(verifyRoutes, resourceServer);
 
+function parseFlags(flags: string | null): unknown[] {
+  if (!flags) return [];
+  try {
+    const parsed: unknown = JSON.parse(flags);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 // POST /verify-content — AI originality check (x402 paywalled)
 router.post("/verify-content", verifyPaywall, async (req, res) => {
   const { content, resourceId } = req.body;
@@ -105,7 +115,7 @@ router.get("/agent/status", async (_req, res) => {
         resourceTitle: resource?.title || "Unknown",
         isOriginal: v.isOriginal,
         confidence: v.confidence,
-        flags: v.flags ? JSON.parse(v.flags) : [],
+        flags: parseFlags(v.flags),
         checkedAt: v.checkedAt,
       };
     })
