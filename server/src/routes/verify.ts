@@ -12,6 +12,7 @@ import { db } from "../db/client.js";
 import { resources, verifications } from "../db/schema.js";
 import { checkOriginality } from "../services/verificationService.js";
 import { config } from "../config.js";
+import { parseStoredVerificationFlags } from "../utils/verification.js";
 
 const router: RouterType = Router();
 const network = config.NETWORK as Network;
@@ -38,16 +39,6 @@ const verifyRoutes: RoutesConfig = {
 };
 
 const verifyPaywall = paymentMiddleware(verifyRoutes, resourceServer);
-
-function parseFlags(flags: string | null): unknown[] {
-  if (!flags) return [];
-  try {
-    const parsed: unknown = JSON.parse(flags);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 // POST /verify-content — AI originality check (x402 paywalled)
 router.post("/verify-content", verifyPaywall, async (req, res) => {
@@ -115,7 +106,7 @@ router.get("/agent/status", async (_req, res) => {
         resourceTitle: resource?.title || "Unknown",
         isOriginal: v.isOriginal,
         confidence: v.confidence,
-        flags: parseFlags(v.flags),
+        flags: parseStoredVerificationFlags(v.flags),
         checkedAt: v.checkedAt,
       };
     })

@@ -4,6 +4,16 @@ export interface VerificationResult {
   flags: string[];
 }
 
+export function parseStoredVerificationFlags(flags: string | null | undefined): unknown[] {
+  if (!flags) return [];
+  try {
+    const parsed: unknown = JSON.parse(flags);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 // keep confidence inside the 0.0 - 1.0 range the schema and the average in
 // /verify expect; a model that answers 95 or -1 would otherwise skew the mean
 function clamp01(n: number): number {

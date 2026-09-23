@@ -4,6 +4,7 @@ import { resources, publishers, verifications, payments } from "../db/schema.js"
 import { uploadFile, deleteFile } from "../storage/supabaseStorage.js";
 import { escapeLike } from "../utils/like.js";
 import { resolveSort, type CatalogSort } from "../utils/sort.js";
+import { parseStoredVerificationFlags } from "../utils/verification.js";
 
 export async function createFileResource(data: {
   publisherId: string;
@@ -409,7 +410,7 @@ export async function getVerificationDetails(resourceId: string) {
       ? {
           isOriginal: verification.isOriginal,
           confidence: verification.confidence,
-          flags: verification.flags ? JSON.parse(verification.flags) : [],
+          flags: parseStoredVerificationFlags(verification.flags),
           checkedAt: verification.checkedAt,
         }
       : null,
