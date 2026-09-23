@@ -1,6 +1,7 @@
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { eq } from "drizzle-orm";
 
 // the db-backed happy paths the route guard tests can't reach: catalog list,
 // publish and the price patch run here against an in-memory pglite postgres so
@@ -57,6 +58,15 @@ test("listCatalog returns only listed rows", async () => {
   const rows = await svc.listCatalog();
   assert.equal(rows.length, 3);
   assert.ok(!rows.some((r) => r.title === "Hidden draft"));
+});
+
+test("getResourceMeta does not expose an unlisted resource", async () => {
+  const hidden = await db
+    .select({ id: schema.resources.id })
+    .from(schema.resources)
+    .where(eq(schema.resources.title, "Hidden draft"));
+
+  assert.equal(await svc.getResourceMeta(hidden[0].id), null);
 });
 
 test("countCatalog matches the listed total under the same filters", async () => {

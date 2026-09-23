@@ -339,7 +339,7 @@ export async function getResourceMeta(id: string) {
     })
     .from(resources)
     .innerJoin(publishers, eq(resources.publisherId, publishers.id))
-    .where(eq(resources.id, id))
+    .where(and(eq(resources.id, id), eq(resources.listed, true)))
     .then((rows) => rows[0] ?? null);
 
   return result;
