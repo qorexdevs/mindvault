@@ -14,7 +14,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "generate-wallet": "tsx scripts/generate-wallet.ts",
     "e2e": "tsx scripts/e2e-test.ts",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --test-concurrency=1 --import tsx --test test/*.test.ts"
   },
   "keywords": [
     "x402",
